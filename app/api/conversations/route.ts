@@ -1,9 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getSql } from "@/lib/database"
 
 export const runtime = "edge"
-
-const sql = neon(process.env.DATABASE_URL!)
 
 // GET - Fetch all conversations for a user
 export async function GET(req: NextRequest) {
@@ -15,6 +13,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "userId is required" }, { status: 400 })
     }
 
+    const sql = getSql()
     const conversations = await sql`
       SELECT id, title, model, created_at, updated_at
       FROM conversations
@@ -38,6 +37,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "userId is required" }, { status: 400 })
     }
 
+    const sql = getSql()
     const result = await sql`
       INSERT INTO conversations (user_id, title, model)
       VALUES (${userId}, ${title || "New Conversation"}, ${model || "gpt-oss:120b-cloud"})
@@ -64,6 +64,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "title is required" }, { status: 400 })
     }
 
+    const sql = getSql()
     const result = await sql`
       UPDATE conversations
       SET title = ${title}, updated_at = NOW()
@@ -92,6 +93,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "conversationId is required" }, { status: 400 })
     }
 
+    const sql = getSql()
     await sql`
       DELETE FROM conversations
       WHERE id = ${conversationId}

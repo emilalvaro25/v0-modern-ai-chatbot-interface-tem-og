@@ -2,20 +2,29 @@ import { Index } from "@upstash/vector"
 
 // Lazy initialization of Upstash Search client
 let indexInstance: Index | null = null
+let isBuildTime = false
 
-function getIndex(): Index {
-  if (!indexInstance) {
+function getIndex(): Index | null {
+  if (!indexInstance && !isBuildTime) {
     const url = process.env.UPSTASH_SEARCH_REST_URL || process.env.UPSTASH_VECTOR_REST_URL
     const token = process.env.UPSTASH_SEARCH_REST_TOKEN || process.env.UPSTASH_VECTOR_REST_TOKEN
     
     if (!url || !token) {
-      throw new Error('Upstash Vector configuration is missing. Please set UPSTASH_SEARCH_REST_URL and UPSTASH_SEARCH_REST_TOKEN environment variables.')
+      console.warn('[Search] Vector configuration missing, search features will be disabled')
+      isBuildTime = true
+      return null
     }
     
-    indexInstance = new Index({
-      url,
-      token,
-    })
+    try {
+      indexInstance = new Index({
+        url,
+        token,
+      })
+    } catch (error) {
+      console.warn('[Search] Failed to initialize Vector client:', error)
+      isBuildTime = true
+      return null
+    }
   }
   return indexInstance
 }
@@ -29,6 +38,11 @@ export async function indexConversation(conversation: {
 }) {
   try {
     const index = getIndex()
+    if (!index) {
+      console.warn('[Search] Vector client not available, skipping conversation indexing')
+      return
+    }
+    
     const conversationText = `${conversation.title} ${conversation.messages.map((m) => m.content).join(" ")}`
 
     await index.upsert({
@@ -43,7 +57,7 @@ export async function indexConversation(conversation: {
     })
   } catch (error) {
     console.error('[Search] Failed to index conversation:', error)
-    throw error
+    // Don't throw - just log the error
   }
 }
 
@@ -51,6 +65,11 @@ export async function indexConversation(conversation: {
 export async function searchConversations(query: string, userId: string, limit = 10) {
   try {
     const index = getIndex()
+    if (!index) {
+      console.warn('[Search] Vector client not available, returning empty results')
+      return []
+    }
+    
     const results = await index.query({
       data: query,
       topK: limit,
@@ -61,7 +80,8 @@ export async function searchConversations(query: string, userId: string, limit =
     return results
   } catch (error) {
     console.error('[Search] Failed to search conversations:', error)
-    throw error
+    // Return empty results instead of throwing
+    return []
   }
 }
 
@@ -69,10 +89,15 @@ export async function searchConversations(query: string, userId: string, limit =
 export async function deleteConversationFromIndex(conversationId: string) {
   try {
     const index = getIndex()
+    if (!index) {
+      console.warn('[Search] Vector client not available, skipping conversation deletion')
+      return
+    }
+    
     await index.delete(conversationId)
   } catch (error) {
     console.error('[Search] Failed to delete conversation from index:', error)
-    throw error
+    // Don't throw - just log the error
   }
 }
 

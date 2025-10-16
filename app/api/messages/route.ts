@@ -1,9 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getSql } from "@/lib/database"
 
 export const runtime = "edge"
-
-const sql = neon(process.env.DATABASE_URL!)
 
 // GET - Fetch all messages for a conversation
 export async function GET(req: NextRequest) {
@@ -15,6 +13,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "conversationId is required" }, { status: 400 })
     }
 
+    const sql = getSql()
     const messages = await sql`
       SELECT id, role, content, created_at
       FROM messages
