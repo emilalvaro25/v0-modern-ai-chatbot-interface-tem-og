@@ -64,7 +64,6 @@ export async function POST(req: NextRequest) {
     try {
       response = await callOllamaAPI(requestBody)
     } catch (error) {
-      console.error("[System] All endpoints failed:", error)
       return NextResponse.json({ error: ERROR_MESSAGES.AI_UNAVAILABLE }, { status: 503 })
     }
 

@@ -325,20 +325,29 @@ export default function AIAssistantUI() {
       const isThinkingMode = typeof selectedModel === "object" && selectedModel.thinking === true
       const actualModel = typeof selectedModel === "string" ? selectedModel : selectedModel.model
 
+      console.log("[v0] Sending message to Emilio Server...")
+      console.log("[v0] Model:", actualModel)
+      console.log("[v0] Thinking mode:", isThinkingMode)
+      console.log("[v0] Tools enabled:", isCodingAgent)
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages,
-          model: actualModel, // Always use the actual Ollama model name
+          model: actualModel,
           conversationId: convId,
           userId,
           enableTools: isCodingAgent,
-          enableThinking: isThinkingMode, // Pass thinking as separate flag
+          enableThinking: isThinkingMode,
         }),
       })
 
+      console.log("[v0] Response status:", response.status)
+
       if (!response.ok) {
+        const errorText = await response.text()
+        console.error("[v0] API error response:", errorText)
         throw new Error(`API error: ${response.statusText}`)
       }
 
@@ -480,8 +489,7 @@ export default function AIAssistantUI() {
       const errorMsg = {
         id: Math.random().toString(36).slice(2),
         role: "assistant",
-        content:
-          "Sorry, I encountered an error. Please make sure the OLLAMA_API_KEY environment variable is set correctly.",
+        content: "I'm having trouble connecting to the Emilio Server. Please check your connection and try again.",
         createdAt: new Date().toISOString(),
       }
 

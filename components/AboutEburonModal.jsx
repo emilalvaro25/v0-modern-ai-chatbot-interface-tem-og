@@ -151,7 +151,7 @@ export default function AboutEburonModal({ isOpen, onClose }) {
                   </div>
                   <h3 className="mb-2 font-semibold text-zinc-900 dark:text-white">Exceptional Accuracy</h3>
                   <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                    Powered by state-of-the-art Ollama Cloud models with advanced reasoning capabilities.
+                    Powered by state-of-the-art language models with advanced reasoning capabilities.
                   </p>
                 </div>
 

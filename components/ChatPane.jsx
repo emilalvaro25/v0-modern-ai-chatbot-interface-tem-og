@@ -215,14 +215,10 @@ const ChatPane = forwardRef(function ChatPane(
     ? modelPresets["gpt-oss:120b-cloud"]
     : modelPresets[actualModel] || modelPresets["gpt-oss:120b-cloud"]
 
-  const handlePresetClick = async (prompt) => {
-    if (!prompt.trim() || busy) return
-    setBusy(true)
-    setToolExecutions([])
-    setCurrentStep("")
-    setProgress("")
-    await onSend?.(prompt)
-    setBusy(false)
+  const handlePresetClick = (prompt) => {
+    if (composerRef.current) {
+      composerRef.current.insertTemplate(prompt)
+    }
   }
 
   const tags = isCodingAgent
