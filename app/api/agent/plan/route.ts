@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { ERROR_MESSAGES } from "@/lib/api-config"
+import { callOllamaAPI, ERROR_MESSAGES } from "@/lib/api-config"
 
 const PLANNING_PROMPT = `You are Eburon Planning Agent. Analyze the user's request and respond with ONLY a JSON object (no markdown, no extra text).
 
@@ -18,44 +18,6 @@ Rules:
 - No vague tasks like "Polish" or "Test"
 - Return ONLY the JSON object`
 
-const PRIMARY_API = process.env.OLLAMA_CLOUD_API || "https://api.ollama.ai"
-const FALLBACK_API = "http://168.231.78.113:11434"
-const API_KEY = process.env.OLLAMA_API_KEY || ""
-
-async function callLLMAPI(endpoint: string, body: any, usePrimary = true): Promise<Response> {
-  const baseURL = usePrimary ? PRIMARY_API : FALLBACK_API
-  const url = `${baseURL}${endpoint}`
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-  }
-
-  if (usePrimary && API_KEY) {
-    headers["Authorization"] = `Bearer ${API_KEY}`
-  }
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    })
-
-    if (!response.ok && usePrimary) {
-      console.log("[System] Primary endpoint failed, trying fallback...")
-      return callLLMAPI(endpoint, body, false)
-    }
-
-    return response
-  } catch (error) {
-    if (usePrimary) {
-      console.log("[System] Primary endpoint unreachable, using fallback...")
-      return callLLMAPI(endpoint, body, false)
-    }
-    throw error
-  }
-}
-
 export async function POST(req: NextRequest) {
   try {
     const { prompt, model = "gpt-oss:20b-cloud" } = await req.json()
@@ -66,7 +28,7 @@ export async function POST(req: NextRequest) {
 
     let response: Response
     try {
-      response = await callLLMAPI("/api/chat", {
+      response = await callOllamaAPI({
         model,
         messages: [
           {
