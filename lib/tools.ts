@@ -265,6 +265,276 @@ function generateSuggestedFixes(errorMessage: string, context?: string, codeSnip
   return fixes.length > 0 ? fixes : ["Review the error message and stack trace for more details"]
 }
 
+// Tool definitions for Eburon AI - Available to all models
+export const EBURON_TOOLS: Tool[] = [
+  {
+    type: "function",
+    function: {
+      name: "web_search",
+      description:
+        "Search the web for current information, documentation, code examples, or solutions. Use this when you need up-to-date information, latest API documentation, current events, or solutions to specific problems. Returns relevant search results with titles, URLs, and snippets.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description:
+              "The search query. Be specific and include relevant terms, version numbers, or error messages. Examples: 'Next.js 15 server actions', 'TypeScript 5.3 new features', 'React 19 use hook'",
+          },
+          max_results: {
+            type: "number",
+            description: "Maximum number of results to return (default: 5, max: 10)",
+            default: 5,
+          },
+        },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "analyze_error",
+      description:
+        "Analyze error messages, stack traces, or unexpected behavior to identify root causes and suggest fixes. Use this when encountering runtime errors, build failures, type errors, or bugs. Returns error type, likely causes, and suggested fixes.",
+      parameters: {
+        type: "object",
+        properties: {
+          error_message: {
+            type: "string",
+            description: "The complete error message or stack trace",
+          },
+          context: {
+            type: "string",
+            description: "Additional context: when/where the error occurred, what action triggered it",
+          },
+          code_snippet: {
+            type: "string",
+            description: "The relevant code snippet that caused the error (optional but helpful)",
+          },
+        },
+        required: ["error_message"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "execute_code",
+      description:
+        "Execute code in a sandboxed environment to test functionality, validate logic, or debug issues. Supports JavaScript, TypeScript, Python, and SQL. Returns execution output, errors, and execution time.",
+      parameters: {
+        type: "object",
+        properties: {
+          language: {
+            type: "string",
+            enum: ["javascript", "typescript", "python", "sql"],
+            description: "The programming language of the code",
+          },
+          code: {
+            type: "string",
+            description: "The code to execute",
+          },
+          test_cases: {
+            type: "array",
+            items: { type: "object" },
+            description: "Optional test cases to validate the code with expected inputs/outputs",
+          },
+        },
+        required: ["language", "code"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "read_documentation",
+      description:
+        "Fetch and read official documentation for libraries, frameworks, APIs, or tools. Use this to get accurate, authoritative information about specific features, methods, or configurations. Returns documentation content and examples.",
+      parameters: {
+        type: "object",
+        properties: {
+          library: {
+            type: "string",
+            description:
+              'The library, framework, or tool name. Examples: "Next.js", "React", "Tailwind CSS", "PostgreSQL", "TypeScript"',
+          },
+          topic: {
+            type: "string",
+            description:
+              'The specific topic, feature, or API to look up. Examples: "server actions", "useEffect hook", "grid layout", "JSON functions"',
+          },
+          version: {
+            type: "string",
+            description: 'Optional version number. Examples: "15", "19", "5.3"',
+          },
+        },
+        required: ["library", "topic"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "validate_code",
+      description:
+        "Validate code for syntax errors, type errors, linting issues, and best practice violations. Use this before finalizing code to ensure quality. Returns validation results with errors, warnings, and suggestions.",
+      parameters: {
+        type: "object",
+        properties: {
+          code: {
+            type: "string",
+            description: "The code to validate",
+          },
+          language: {
+            type: "string",
+            enum: ["javascript", "typescript", "python", "sql", "html", "css"],
+            description: "The programming language",
+          },
+          strict_mode: {
+            type: "boolean",
+            description: "Enable strict validation rules (recommended for production code)",
+            default: true,
+          },
+        },
+        required: ["code", "language"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "query_database",
+      description:
+        "Query the Neon PostgreSQL database to retrieve, analyze, or verify data. Use this to check existing data, validate database state, or gather information for responses. Returns query results.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "The SQL query to execute (SELECT queries only for safety)",
+          },
+          description: {
+            type: "string",
+            description: "Brief description of what you're querying for (for logging)",
+          },
+        },
+        required: ["query", "description"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "analyze_conversation",
+      description:
+        "Analyze the current conversation history to extract key information, identify patterns, or summarize context. Use this when you need to reference earlier parts of the conversation or understand the full context.",
+      parameters: {
+        type: "object",
+        properties: {
+          analysis_type: {
+            type: "string",
+            enum: ["summary", "key_points", "user_intent", "technical_context", "decisions_made"],
+            description: "The type of analysis to perform on the conversation",
+          },
+          focus_area: {
+            type: "string",
+            description: "Optional: specific area to focus on (e.g., 'database schema', 'API design')",
+          },
+        },
+        required: ["analysis_type"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "compare_approaches",
+      description:
+        "Compare different technical approaches, libraries, or solutions to help make informed decisions. Use this when evaluating options or explaining trade-offs. Returns comparison with pros, cons, and recommendations.",
+      parameters: {
+        type: "object",
+        properties: {
+          option_a: {
+            type: "string",
+            description: "First approach/library/solution to compare",
+          },
+          option_b: {
+            type: "string",
+            description: "Second approach/library/solution to compare",
+          },
+          context: {
+            type: "string",
+            description: "The use case or context for the comparison",
+          },
+          criteria: {
+            type: "array",
+            items: { type: "string" },
+            description: "Optional criteria to focus on (e.g., 'performance', 'ease of use', 'community support')",
+          },
+        },
+        required: ["option_a", "option_b", "context"],
+      },
+    },
+  },
+]
+
+export async function executeQueryDatabase(query: string, description: string) {
+  try {
+    // Only allow SELECT queries for safety
+    if (!query.trim().toUpperCase().startsWith("SELECT")) {
+      return {
+        success: false,
+        error: "Only SELECT queries are allowed for safety. Use the database management UI for modifications.",
+      }
+    }
+
+    const { neon } = await import("@neondatabase/serverless")
+    const sql = neon(process.env.DATABASE_URL!)
+
+    const results = await sql(query)
+
+    return {
+      success: true,
+      description,
+      rows: results,
+      count: results.length,
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Database query failed",
+    }
+  }
+}
+
+export async function executeAnalyzeConversation(analysisType: string, focusArea?: string) {
+  // This would analyze the conversation context
+  // For now, return a structured response
+  return {
+    success: true,
+    analysis_type: analysisType,
+    focus_area: focusArea,
+    note: "Conversation analysis requires access to full message history. Please provide context in your prompt.",
+  }
+}
+
+export async function executeCompareApproaches(optionA: string, optionB: string, context: string, criteria?: string[]) {
+  // Use web search to gather comparison information
+  const searchQuery = `${optionA} vs ${optionB} ${context} comparison ${criteria?.join(" ") || ""}`
+  const searchResults = await executeWebSearch(searchQuery, 5)
+
+  return {
+    success: true,
+    option_a: optionA,
+    option_b: optionB,
+    context,
+    criteria: criteria || ["performance", "ease of use", "community support", "documentation"],
+    search_results: searchResults.results,
+    note: "Use the search results to provide a comprehensive comparison with pros, cons, and recommendations.",
+  }
+}
+
 export async function executeTool(toolName: string, args: any) {
   console.log("[v0] Executing tool:", toolName, "with args:", args)
 
@@ -279,6 +549,12 @@ export async function executeTool(toolName: string, args: any) {
       return executeReadDocumentation(args.library, args.topic)
     case "validate_code":
       return executeValidateCode(args.code, args.language, args.strict_mode)
+    case "query_database":
+      return executeQueryDatabase(args.query, args.description)
+    case "analyze_conversation":
+      return executeAnalyzeConversation(args.analysis_type, args.focus_area)
+    case "compare_approaches":
+      return executeCompareApproaches(args.option_a, args.option_b, args.context, args.criteria)
     default:
       return {
         success: false,

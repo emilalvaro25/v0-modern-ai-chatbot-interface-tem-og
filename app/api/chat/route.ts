@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 import { getSystemPrompt } from "@/lib/system-prompt"
 import { CODING_AGENT_SYSTEM_PROMPT } from "@/lib/coding-agent-prompt"
-import { CODING_AGENT_TOOLS, executeTool } from "@/lib/tools"
+import { EBURON_TOOLS, executeTool } from "@/lib/tools"
 
 export const runtime = "edge"
 
@@ -12,7 +12,7 @@ const sql = neon(process.env.DATABASE_URL!)
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, model, conversationId, userId, enableTools = false, enableThinking = false } = await req.json()
+    const { messages, model, conversationId, userId, enableTools = true, enableThinking = false } = await req.json()
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: "Messages array is required" }, { status: 400 })
@@ -48,8 +48,8 @@ export async function POST(req: NextRequest) {
       requestBody.think = true
     }
 
-    if (isCodingAgent && enableTools) {
-      requestBody.tools = CODING_AGENT_TOOLS
+    if (enableTools) {
+      requestBody.tools = EBURON_TOOLS
     }
 
     const response = await fetch(`${OLLAMA_API_URL}/chat`, {
@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
                         model: model || "gpt-oss:120b-cloud",
                         messages: messagesWithSystem,
                         stream: true,
-                        tools: isCodingAgent && enableTools ? CODING_AGENT_TOOLS : undefined,
+                        tools: enableTools ? EBURON_TOOLS : undefined,
                       }),
                     })
 
