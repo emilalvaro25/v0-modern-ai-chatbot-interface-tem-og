@@ -3,6 +3,7 @@ import { neon } from "@neondatabase/serverless"
 import { getSystemPrompt } from "@/lib/system-prompt"
 import { CODING_AGENT_SYSTEM_PROMPT } from "@/lib/coding-agent-prompt"
 import { EBURON_TOOLS, executeTool } from "@/lib/tools"
+import { buildAIMemory, generateMemorySummary } from "@/lib/memory"
 
 export const runtime = "edge"
 
@@ -24,8 +25,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "OLLAMA_API_KEY environment variable is not set" }, { status: 500 })
     }
 
+    let memoryContext = ""
+    if (userId) {
+      const memory = await buildAIMemory(userId, conversationId)
+      memoryContext = generateMemorySummary(memory)
+    }
+
     const isCodingAgent = model === "qwen3-coder:480b-cloud"
-    const systemPrompt = isCodingAgent ? CODING_AGENT_SYSTEM_PROMPT : getSystemPrompt()
+    const baseSystemPrompt = isCodingAgent ? CODING_AGENT_SYSTEM_PROMPT : getSystemPrompt()
+    const systemPrompt = baseSystemPrompt + memoryContext
     const messagesWithSystem = [{ role: "system", content: systemPrompt }, ...messages]
 
     if (conversationId && userId) {

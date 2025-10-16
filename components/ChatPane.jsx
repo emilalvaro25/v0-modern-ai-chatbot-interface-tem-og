@@ -4,6 +4,7 @@ import { useState, forwardRef, useImperativeHandle, useRef } from "react"
 import { Pencil, RefreshCw, Check, X, Square, Loader2, Search, Code, FileText, CheckCircle2 } from "lucide-react"
 import Message from "./Message"
 import Composer from "./Composer"
+import { MessageContent } from "./MessageContent"
 import { cls, timeAgo } from "./utils"
 
 function ToolExecutionIndicator({ tool, status, result }) {
@@ -188,7 +189,7 @@ const ChatPane = forwardRef(function ChatPane(
                       </div>
                     ) : (
                       <Message role={m.role} thinking={m.thinking}>
-                        <div className="whitespace-pre-wrap">{m.content}</div>
+                        <MessageContent content={m.content} />
                         {m.toolExecutions && m.toolExecutions.length > 0 && (
                           <div className="mt-3 space-y-2">
                             {m.toolExecutions.map((tool, idx) => (
