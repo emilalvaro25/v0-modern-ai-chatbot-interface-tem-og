@@ -19,6 +19,9 @@ export default function Header({
     { name: "gpt-oss:20b-cloud", label: "Emilio-flash-20b", icon: "⚡", thinking: false },
     { name: "deepseek-v3.1:671b-cloud", label: "Aquilles-V3.1", icon: "🎯", thinking: false },
     { name: "qwen3-coder:480b-cloud", label: "Alex-Coder", icon: "💻", thinking: true, context: "32K" },
+    { name: "glm-4.6:cloud", label: "Alex-128K", icon: "🤖", thinking: true, context: "200K" },
+    { name: "qwen3-vl:235b-cloud", label: "Aquiles-Vision", icon: "👁️", thinking: false, context: "125K", vision: true },
+    { name: "kimi-k2:1t-cloud", label: "Emilio-Coder", icon: "🔧", thinking: true, context: "256K" },
   ]
 
   const currentModel =
