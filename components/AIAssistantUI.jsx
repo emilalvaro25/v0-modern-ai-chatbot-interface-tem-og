@@ -601,7 +601,7 @@ export default function AIAssistantUI() {
 
   return (
     <div className="h-screen w-full bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <div className="md:hidden sticky top-0 z-40 flex items-center gap-2 border-b border-zinc-200/60 bg-white/80 px-3 py-2 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/70">
+      <div className="md:hidden sticky top-0 z-40 flex items-center gap-2 border-b border-zinc-200/60 bg-white/80 px-4 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/70">
         <div className="ml-1 flex items-center gap-2 text-sm font-semibold tracking-tight">
           <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-xs font-bold">
             E
@@ -622,7 +622,7 @@ export default function AIAssistantUI() {
         </div>
       </div>
 
-      <div className="mx-auto flex h-[calc(100vh-0px)] max-w-[1400px]">
+      <div className="mx-auto flex h-[calc(100vh-0px)] w-full">
         <Sidebar
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}

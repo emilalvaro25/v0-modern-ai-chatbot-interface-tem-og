@@ -120,13 +120,13 @@ const ChatPane = forwardRef(function ChatPane(
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
-      <div className="flex-1 space-y-5 overflow-y-auto px-4 py-6 sm:px-8">
+      <div className="flex-1 space-y-5 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-6 lg:px-8">
         {conversation ? (
           <>
-            <div className="mb-2 text-3xl font-serif tracking-tight sm:text-4xl md:text-5xl">
-              <span className="block leading-[1.05] font-sans text-2xl">{conversation.title}</span>
+            <div className="mb-2 text-2xl font-serif tracking-tight sm:text-3xl md:text-4xl lg:text-5xl">
+              <span className="block leading-[1.05] font-sans text-xl sm:text-2xl">{conversation.title}</span>
             </div>
-            <div className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+            <div className="mb-4 text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
               Updated {timeAgo(conversation.updatedAt)} · {count} messages
             </div>
 
@@ -135,7 +135,7 @@ const ChatPane = forwardRef(function ChatPane(
                 <span
                   key={t}
                   className={cls(
-                    "inline-flex items-center rounded-full border px-3 py-1 text-xs",
+                    "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] sm:px-3 sm:py-1 sm:text-xs",
                     isCodingAgent || isThinkingMode
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
                       : "border-zinc-200 text-zinc-700 dark:border-zinc-800 dark:text-zinc-200",
@@ -251,7 +251,7 @@ const ChatPane = forwardRef(function ChatPane(
                 <span
                   key={t}
                   className={cls(
-                    "inline-flex items-center rounded-full border px-3 py-1 text-xs",
+                    "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] sm:px-3 sm:py-1 sm:text-xs",
                     isCodingAgent || isThinkingMode
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
                       : "border-zinc-200 text-zinc-700 dark:border-zinc-800 dark:text-zinc-200",

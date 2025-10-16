@@ -73,11 +73,11 @@ const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgent
   const hasContent = value.length > 0
 
   return (
-    <div className="border-t border-zinc-200/60 p-4 dark:border-zinc-800">
+    <div className="border-t border-zinc-200/60 p-3 sm:p-4 dark:border-zinc-800">
       <div
         className={cls(
           "mx-auto flex flex-col rounded-2xl border bg-white shadow-sm dark:bg-zinc-950 transition-all duration-200",
-          "max-w-3xl border-zinc-300 dark:border-zinc-700 p-3",
+          "w-full max-w-full sm:max-w-3xl lg:max-w-4xl border-zinc-300 dark:border-zinc-700 p-2 sm:p-3",
         )}
       >
         <div className="flex-1 relative">
@@ -107,10 +107,10 @@ const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgent
         </div>
 
         <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <ComposerActionsPopover agentMode={agentMode} onAgentModeChange={onAgentModeChange}>
               <button
-                className="inline-flex shrink-0 items-center justify-center rounded-full p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 transition-colors"
+                className="inline-flex shrink-0 items-center justify-center rounded-full p-1.5 sm:p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 transition-colors"
                 title="Add attachment"
               >
                 <Plus className="h-4 w-4" />
@@ -118,8 +118,8 @@ const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgent
             </ComposerActionsPopover>
 
             {agentMode && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-full shadow-sm">
-                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <span className="inline-flex items-center gap-1 px-2 py-1 text-[10px] sm:text-xs font-medium bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-full shadow-sm">
+                <svg className="h-2.5 w-2.5 sm:h-3 sm:w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -134,7 +134,7 @@ const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgent
 
           <div className="flex items-center gap-1 shrink-0">
             <button
-              className="inline-flex items-center justify-center rounded-full p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 transition-colors"
+              className="inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 transition-colors"
               title="Voice input"
             >
               <Mic className="h-4 w-4" />
@@ -143,17 +143,21 @@ const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgent
               onClick={handleSend}
               disabled={sending || busy || !value.trim()}
               className={cls(
-                "inline-flex shrink-0 items-center gap-2 rounded-full bg-zinc-900 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-white dark:text-zinc-900",
+                "inline-flex shrink-0 items-center gap-1.5 sm:gap-2 rounded-full bg-zinc-900 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-white dark:text-zinc-900",
                 (sending || busy || !value.trim()) && "opacity-50 cursor-not-allowed",
               )}
             >
-              {sending || busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {sending || busy ? (
+                <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+              ) : (
+                <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              )}
             </button>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto mt-2 max-w-3xl px-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+      <div className="mx-auto mt-2 w-full max-w-full sm:max-w-3xl lg:max-w-4xl px-1 text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400">
         Press{" "}
         <kbd className="rounded border border-zinc-300 bg-zinc-50 px-1 dark:border-zinc-600 dark:bg-zinc-800">
           Enter
