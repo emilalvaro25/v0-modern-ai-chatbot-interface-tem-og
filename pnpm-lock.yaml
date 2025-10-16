@@ -187,7 +187,7 @@ importers:
         specifier: ^4.1.9
         version: 4.1.9
       '@types/node':
-        specifier: ^22.18.10
+        specifier: ^22
         version: 22.18.10
       '@types/react':
         specifier: ^19
