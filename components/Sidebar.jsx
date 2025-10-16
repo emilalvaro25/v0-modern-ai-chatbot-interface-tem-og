@@ -10,7 +10,6 @@ import {
   FolderIcon,
   FileText,
   Settings,
-  Asterisk,
 } from "lucide-react"
 import SidebarSection from "./SidebarSection"
 import ConversationRow from "./ConversationRow"
@@ -203,10 +202,10 @@ export default function Sidebar({
           >
             <div className="flex items-center gap-2 border-b border-zinc-200/60 px-3 py-3 dark:border-zinc-800">
               <div className="flex items-center gap-2">
-                <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-sm dark:from-zinc-200 dark:to-zinc-300 dark:text-zinc-900">
-                  <Asterisk className="h-4 w-4" />
+                <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm dark:from-emerald-400 dark:to-teal-500">
+                  <span className="text-base font-bold">E</span>
                 </div>
-                <div className="text-sm font-semibold tracking-tight">AI Assistant</div>
+                <div className="text-sm font-semibold tracking-tight">Eburon AI</div>
               </div>
               <div className="ml-auto flex items-center gap-1">
                 <button
@@ -261,7 +260,7 @@ export default function Sidebar({
             <nav className="mt-4 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-2 pb-4">
               <SidebarSection
                 icon={<Star className="h-4 w-4" />}
-                title="PINNED CHATS" // Renamed from "PINNED CONVERSATIONS" to "PINNED CHATS"
+                title="PINNED CHATS"
                 collapsed={collapsed.pinned}
                 onToggle={() => setCollapsed((s) => ({ ...s, pinned: !s.pinned }))}
               >
@@ -337,7 +336,7 @@ export default function Sidebar({
               </SidebarSection>
 
               <SidebarSection
-                icon={<FileText className="h-4 w-4" />} // Replaced StarOff with FileText for better template metaphor
+                icon={<FileText className="h-4 w-4" />}
                 title="TEMPLATES"
                 collapsed={collapsed.templates}
                 onToggle={() => setCollapsed((s) => ({ ...s, templates: !s.templates }))}
