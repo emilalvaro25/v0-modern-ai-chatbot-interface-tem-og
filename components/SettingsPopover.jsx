@@ -2,11 +2,19 @@
 import { useState } from "react"
 import { User, Globe, HelpCircle, Info, BookOpen, LogOut, ChevronRight } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
+import { Dialog, DialogContent } from "./ui/dialog"
 import AboutEburonModal from "./AboutEburonModal"
+import LanguageSelector from "./LanguageSelector"
+import { useTranslation } from "@/contexts/TranslationContext"
+import { LANGUAGES } from "@/lib/languages"
 
 export default function SettingsPopover({ children }) {
   const [open, setOpen] = useState(false)
   const [showAboutModal, setShowAboutModal] = useState(false)
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false)
+  const { language, t } = useTranslation()
+
+  const currentLanguage = LANGUAGES.find((l) => l.code === language)
 
   return (
     <>
@@ -19,10 +27,10 @@ export default function SettingsPopover({ children }) {
             <div className="flex items-center gap-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 mb-4">
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4" />
-                <span className="text-sm font-medium">Personal</span>
+                <span className="text-sm font-medium">{t("Personal")}</span>
               </div>
               <div className="ml-auto">
-                <div className="text-xs text-zinc-500">Pro plan</div>
+                <div className="text-xs text-zinc-500">{t("Pro plan")}</div>
               </div>
               <div className="text-blue-500">
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
@@ -36,17 +44,24 @@ export default function SettingsPopover({ children }) {
             </div>
 
             <div className="space-y-1">
-              <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-2">Settings</div>
+              <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-2">{t("Settings")}</div>
 
-              <button className="flex items-center gap-3 w-full p-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg">
+              <button
+                onClick={() => {
+                  setShowLanguageSelector(true)
+                  setOpen(false)
+                }}
+                className="flex items-center gap-3 w-full p-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
+              >
                 <Globe className="h-4 w-4" />
-                <span>Language</span>
-                <ChevronRight className="h-4 w-4 ml-auto" />
+                <span>{t("Language")}</span>
+                <span className="ml-auto text-xs text-zinc-500">{currentLanguage?.nativeName}</span>
+                <ChevronRight className="h-4 w-4" />
               </button>
 
               <button className="flex items-center gap-3 w-full p-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg">
                 <HelpCircle className="h-4 w-4" />
-                <span>Get help</span>
+                <span>{t("Get help")}</span>
               </button>
 
               <button
@@ -57,18 +72,18 @@ export default function SettingsPopover({ children }) {
                 className="flex items-center gap-3 w-full p-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
               >
                 <Info className="h-4 w-4" />
-                <span>About Eburon</span>
+                <span>{t("About Eburon")}</span>
               </button>
 
               <button className="flex items-center gap-3 w-full p-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg">
                 <BookOpen className="h-4 w-4" />
-                <span>Learn more</span>
+                <span>{t("Learn more")}</span>
                 <ChevronRight className="h-4 w-4 ml-auto" />
               </button>
 
               <button className="flex items-center gap-3 w-full p-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg">
                 <LogOut className="h-4 w-4" />
-                <span>Log out</span>
+                <span>{t("Log out")}</span>
               </button>
             </div>
           </div>
@@ -76,6 +91,12 @@ export default function SettingsPopover({ children }) {
       </Popover>
 
       <AboutEburonModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
+
+      <Dialog open={showLanguageSelector} onOpenChange={setShowLanguageSelector}>
+        <DialogContent className="p-0 max-w-fit">
+          <LanguageSelector onClose={() => setShowLanguageSelector(false)} />
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

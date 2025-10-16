@@ -1,12 +1,9 @@
 "use client"
 
 import React, { useEffect, useMemo, useRef, useState } from "react"
-import { Calendar, LayoutGrid, MoreHorizontal } from "lucide-react"
 import Sidebar from "./Sidebar"
 import Header from "./Header"
 import ChatPane from "./ChatPane"
-import GhostIconButton from "./GhostIconButton"
-import ThemeToggle from "./ThemeToggle"
 import PlanApprovalModal from "./PlanApprovalModal"
 
 export default function AIAssistantUI() {
@@ -53,7 +50,11 @@ export default function AIAssistantUI() {
 
   const [selectedModel, setSelectedModel] = useState("gpt-oss:120b-cloud")
 
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window === "undefined") return false
+    return window.innerWidth >= 768 // md breakpoint
+  })
+
   const [collapsed, setCollapsed] = useState(() => {
     try {
       const raw = localStorage.getItem("sidebar-collapsed")
@@ -232,7 +233,9 @@ export default function AIAssistantUI() {
         }
         setConversations((prev) => [item, ...prev])
         setSelectedId(conv.id)
-        setSidebarOpen(false)
+        if (typeof window !== "undefined" && window.innerWidth < 768) {
+          setSidebarOpen(false)
+        }
       }
     } catch (error) {
       console.error("[v0] Error creating conversation:", error)
@@ -604,30 +607,24 @@ export default function AIAssistantUI() {
 
   const selected = conversations.find((c) => c.id === selectedId) || null
 
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setSidebarOpen(true)
+      } else {
+        setSidebarOpen(false)
+      }
+    }
+
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
+
   return (
     <div className="h-screen w-full bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <div className="md:hidden sticky top-0 z-40 flex items-center gap-2 border-b border-zinc-200/60 bg-white/80 px-4 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/70">
-        <div className="ml-1 flex items-center gap-2 text-sm font-semibold tracking-tight">
-          <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-xs font-bold">
-            E
-          </span>{" "}
-          Eburon AI
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <GhostIconButton label="Schedule">
-            <Calendar className="h-4 w-4" />
-          </GhostIconButton>
-          <GhostIconButton label="Apps">
-            <LayoutGrid className="h-4 w-4" />
-          </GhostIconButton>
-          <GhostIconButton label="More">
-            <MoreHorizontal className="h-4 w-4" />
-          </GhostIconButton>
-          <ThemeToggle theme={theme} setTheme={setTheme} />
-        </div>
-      </div>
-
-      <div className="mx-auto flex h-[calc(100vh-0px)] w-full">
+      <div className="mx-auto flex h-full w-full">
         <Sidebar
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
@@ -643,7 +640,12 @@ export default function AIAssistantUI() {
           folders={folders}
           folderCounts={folderCounts}
           selectedId={selectedId}
-          onSelect={(id) => setSelectedId(id)}
+          onSelect={(id) => {
+            setSelectedId(id)
+            if (typeof window !== "undefined" && window.innerWidth < 768) {
+              setSidebarOpen(false)
+            }
+          }}
           togglePin={togglePin}
           query={query}
           setQuery={setQuery}
@@ -660,6 +662,7 @@ export default function AIAssistantUI() {
             createNewChat={createNewChat}
             sidebarCollapsed={sidebarCollapsed}
             setSidebarOpen={setSidebarOpen}
+            sidebarOpen={sidebarOpen}
             selectedModel={selectedModel}
             onModelChange={setSelectedModel}
           />

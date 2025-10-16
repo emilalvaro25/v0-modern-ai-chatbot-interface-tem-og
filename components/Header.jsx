@@ -3,7 +3,14 @@ import { MoreHorizontal, Menu, ChevronDown } from "lucide-react"
 import { useState } from "react"
 import GhostIconButton from "./GhostIconButton"
 
-export default function Header({ createNewChat, sidebarCollapsed, setSidebarOpen, selectedModel, onModelChange }) {
+export default function Header({
+  createNewChat,
+  sidebarCollapsed,
+  setSidebarOpen,
+  sidebarOpen,
+  selectedModel,
+  onModelChange,
+}) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   const ollamaModels = [
@@ -24,51 +31,55 @@ export default function Header({ createNewChat, sidebarCollapsed, setSidebarOpen
 
   return (
     <div className="sticky top-0 z-30 flex items-center gap-2 border-b border-zinc-200/60 bg-white/80 px-3 sm:px-4 py-2.5 sm:py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/70">
-      {sidebarCollapsed && (
+      {(!sidebarOpen || sidebarCollapsed) && (
         <button
           onClick={() => setSidebarOpen(true)}
-          className="md:hidden inline-flex items-center justify-center rounded-lg p-1.5 sm:p-2 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-zinc-800"
+          className="inline-flex items-center justify-center rounded-lg p-1.5 sm:p-2 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-zinc-800 md:hidden"
           aria-label="Open sidebar"
         >
           <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
         </button>
       )}
 
-      <div className="hidden sm:flex relative">
+      <div className="flex relative">
         <button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-zinc-200 bg-white px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-semibold tracking-tight hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-800"
         >
           <span className="text-xs sm:text-sm">{currentModel.icon}</span>
           <span className="hidden sm:inline">{currentModel.label}</span>
+          <span className="sm:hidden">{currentModel.label.split("-")[0]}</span>
           <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
         </button>
 
         {isDropdownOpen && (
-          <div className="absolute top-full left-0 mt-1 w-48 sm:w-56 rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950 z-50">
-            {ollamaModels.map((model, idx) => {
-              const modelKey = `${model.name}-${model.thinking ? "thinking" : "normal"}`
-              const isSelected =
-                typeof selectedModel === "string"
-                  ? selectedModel === model.name && !model.thinking
-                  : selectedModel.model === model.name && selectedModel.thinking === model.thinking
+          <>
+            <div className="fixed inset-0 z-40 md:hidden" onClick={() => setIsDropdownOpen(false)} />
+            <div className="absolute top-full left-0 mt-1 w-48 sm:w-56 rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950 z-50">
+              {ollamaModels.map((model, idx) => {
+                const modelKey = `${model.name}-${model.thinking ? "thinking" : "normal"}`
+                const isSelected =
+                  typeof selectedModel === "string"
+                    ? selectedModel === model.name && !model.thinking
+                    : selectedModel.model === model.name && selectedModel.thinking === model.thinking
 
-              return (
-                <button
-                  key={modelKey}
-                  onClick={() => {
-                    onModelChange?.(model.thinking ? { model: model.name, thinking: true } : model.name)
-                    setIsDropdownOpen(false)
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-xs sm:text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 first:rounded-t-lg last:rounded-b-lg"
-                >
-                  <span className="text-xs sm:text-sm">{model.icon}</span>
-                  <span className="flex-1">{model.label}</span>
-                  {isSelected && <span className="text-xs text-zinc-500">✓</span>}
-                </button>
-              )
-            })}
-          </div>
+                return (
+                  <button
+                    key={modelKey}
+                    onClick={() => {
+                      onModelChange?.(model.thinking ? { model: model.name, thinking: true } : model.name)
+                      setIsDropdownOpen(false)
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs sm:text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 first:rounded-t-lg last:rounded-b-lg"
+                  >
+                    <span className="text-xs sm:text-sm">{model.icon}</span>
+                    <span className="flex-1">{model.label}</span>
+                    {isSelected && <span className="text-xs text-emerald-600 dark:text-emerald-400">✓</span>}
+                  </button>
+                )
+              })}
+            </div>
+          </>
         )}
       </div>
 
