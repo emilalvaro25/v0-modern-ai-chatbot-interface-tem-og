@@ -1,10 +1,11 @@
 "use client"
 import { useState } from "react"
-import { User, Globe, HelpCircle, Info, BookOpen, LogOut, ChevronRight } from "lucide-react"
+import { User, Globe, HelpCircle, Info, BookOpen, LogOut, ChevronRight, Wrench, Plug, Server } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Dialog, DialogContent } from "./ui/dialog"
 import AboutEburonModal from "./AboutEburonModal"
 import LanguageSelector from "./LanguageSelector"
+import ServerSettingsModal from "./ServerSettingsModal"
 import { useTranslation } from "@/contexts/TranslationContext"
 import { LANGUAGES } from "@/lib/languages"
 
@@ -12,9 +13,17 @@ export default function SettingsPopover({ children }) {
   const [open, setOpen] = useState(false)
   const [showAboutModal, setShowAboutModal] = useState(false)
   const [showLanguageSelector, setShowLanguageSelector] = useState(false)
+  const [showServerSettings, setShowServerSettings] = useState(false)
+  const [activeTab, setActiveTab] = useState("general")
   const { language, t } = useTranslation()
 
   const currentLanguage = LANGUAGES.find((l) => l.code === language)
+
+  const handleOpenServerSettings = (tab = "general") => {
+    setActiveTab(tab)
+    setShowServerSettings(true)
+    setOpen(false)
+  }
 
   return (
     <>
@@ -45,6 +54,35 @@ export default function SettingsPopover({ children }) {
 
             <div className="space-y-1">
               <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-2">{t("Settings")}</div>
+
+              <button
+                onClick={() => handleOpenServerSettings("general")}
+                className="flex items-center gap-3 w-full p-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
+              >
+                <Server className="h-4 w-4" />
+                <span>{t("Server Settings")}</span>
+                <ChevronRight className="h-4 w-4 ml-auto" />
+              </button>
+
+              <button
+                onClick={() => handleOpenServerSettings("tools")}
+                className="flex items-center gap-3 w-full p-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
+              >
+                <Wrench className="h-4 w-4" />
+                <span>{t("Tools")}</span>
+                <ChevronRight className="h-4 w-4 ml-auto" />
+              </button>
+
+              <button
+                onClick={() => handleOpenServerSettings("integrations")}
+                className="flex items-center gap-3 w-full p-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
+              >
+                <Plug className="h-4 w-4" />
+                <span>{t("Integrations")}</span>
+                <ChevronRight className="h-4 w-4 ml-auto" />
+              </button>
+
+              <div className="border-t border-zinc-200 dark:border-zinc-800 my-2" />
 
               <button
                 onClick={() => {
@@ -91,6 +129,12 @@ export default function SettingsPopover({ children }) {
       </Popover>
 
       <AboutEburonModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
+
+      <ServerSettingsModal
+        isOpen={showServerSettings}
+        onClose={() => setShowServerSettings(false)}
+        initialTab={activeTab}
+      />
 
       <Dialog open={showLanguageSelector} onOpenChange={setShowLanguageSelector}>
         <DialogContent className="p-0 max-w-fit">
