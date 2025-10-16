@@ -1,7 +1,44 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { fetchWithFallback } from "@/lib/api-config"
 
 export const runtime = "edge"
+
+const PRIMARY_API = process.env.OLLAMA_CLOUD_API || "https://api.ollama.ai"
+const FALLBACK_API = "http://168.231.78.113:11434"
+const API_KEY = process.env.OLLAMA_API_KEY || ""
+
+async function callLLMAPI(endpoint: string, body: any, usePrimary = true): Promise<Response> {
+  const baseURL = usePrimary ? PRIMARY_API : FALLBACK_API
+  const url = `${baseURL}${endpoint}`
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  }
+
+  if (usePrimary && API_KEY) {
+    headers["Authorization"] = `Bearer ${API_KEY}`
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    })
+
+    if (!response.ok && usePrimary) {
+      console.log("[System] Primary endpoint failed, trying fallback...")
+      return callLLMAPI(endpoint, body, false)
+    }
+
+    return response
+  } catch (error) {
+    if (usePrimary) {
+      console.log("[System] Primary endpoint unreachable, using fallback...")
+      return callLLMAPI(endpoint, body, false)
+    }
+    throw error
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,14 +59,11 @@ Title:`
 
     let response: Response
     try {
-      response = await fetchWithFallback("/api/chat", {
-        method: "POST",
-        body: JSON.stringify({
-          model: titleModel,
-          messages: [{ role: "user", content: titlePrompt }],
-          stream: false,
-          temperature: 0.7,
-        }),
+      response = await callLLMAPI("/api/chat", {
+        model: titleModel,
+        messages: [{ role: "user", content: titlePrompt }],
+        stream: false,
+        temperature: 0.7,
       })
     } catch (error) {
       return NextResponse.json({ title: "New Chat" })

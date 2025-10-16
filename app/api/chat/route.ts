@@ -4,11 +4,50 @@ import { getSystemPrompt } from "@/lib/system-prompt"
 import { CODING_AGENT_SYSTEM_PROMPT } from "@/lib/coding-agent-prompt"
 import { EBURON_TOOLS, executeTool } from "@/lib/tools"
 import { buildAIMemory, generateMemorySummary } from "@/lib/memory"
-import { fetchWithFallback, ERROR_MESSAGES } from "@/lib/api-config"
 
 export const runtime = "edge"
 
 const sql = neon(process.env.DATABASE_URL!)
+
+const PRIMARY_API = process.env.OLLAMA_CLOUD_API || "https://api.ollama.ai"
+const FALLBACK_API = "http://168.231.78.113:11434"
+const API_KEY = process.env.OLLAMA_API_KEY || ""
+
+async function callLLMAPI(endpoint: string, body: any, usePrimary = true): Promise<Response> {
+  const baseURL = usePrimary ? PRIMARY_API : FALLBACK_API
+  const url = `${baseURL}${endpoint}`
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  }
+
+  if (usePrimary && API_KEY) {
+    headers["Authorization"] = `Bearer ${API_KEY}`
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    })
+
+    // If primary fails, try fallback
+    if (!response.ok && usePrimary) {
+      console.log("[System] Primary endpoint failed, trying fallback...")
+      return callLLMAPI(endpoint, body, false)
+    }
+
+    return response
+  } catch (error) {
+    // Network error on primary, try fallback
+    if (usePrimary) {
+      console.log("[System] Primary endpoint unreachable, using fallback...")
+      return callLLMAPI(endpoint, body, false)
+    }
+    throw error
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -62,17 +101,17 @@ export async function POST(req: NextRequest) {
 
     let response: Response
     try {
-      response = await fetchWithFallback("/api/chat", {
-        method: "POST",
-        body: JSON.stringify(requestBody),
-      })
+      response = await callLLMAPI("/api/chat", requestBody)
     } catch (error) {
-      console.error("[System] All endpoints failed:", error)
-      return NextResponse.json({ error: ERROR_MESSAGES.AI_UNAVAILABLE }, { status: 503 })
+      console.error("[System] All endpoints failed")
+      return NextResponse.json({ error: "AI service is temporarily unavailable. Please try again." }, { status: 503 })
     }
 
     if (!response.ok) {
-      return NextResponse.json({ error: ERROR_MESSAGES.AI_UNAVAILABLE }, { status: response.status })
+      return NextResponse.json(
+        { error: "AI service is temporarily unavailable. Please try again." },
+        { status: response.status },
+      )
     }
 
     const encoder = new TextEncoder()
@@ -136,14 +175,11 @@ export async function POST(req: NextRequest) {
                       content: JSON.stringify(toolResult),
                     })
 
-                    const followUpResponse = await fetchWithFallback("/api/chat", {
-                      method: "POST",
-                      body: JSON.stringify({
-                        model: model || "gpt-oss:120b-cloud",
-                        messages: messagesWithSystem,
-                        stream: true,
-                        tools: enableTools ? EBURON_TOOLS : undefined,
-                      }),
+                    const followUpResponse = await callLLMAPI("/api/chat", {
+                      model: model || "gpt-oss:120b-cloud",
+                      messages: messagesWithSystem,
+                      stream: true,
+                      tools: enableTools ? EBURON_TOOLS : undefined,
                     })
 
                     const followUpReader = followUpResponse.body?.getReader()
@@ -249,6 +285,6 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error) {
-    return NextResponse.json({ error: ERROR_MESSAGES.GENERIC }, { status: 500 })
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 })
   }
 }
