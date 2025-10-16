@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { neon } from "@neondatabase/serverless"
+import { getSql } from "@/lib/database"
 import { getSystemPrompt } from "@/lib/system-prompt"
 import { CODING_AGENT_SYSTEM_PROMPT } from "@/lib/coding-agent-prompt"
 import { EBURON_TOOLS, executeTool } from "@/lib/tools"
@@ -7,8 +7,6 @@ import { buildAIMemory, generateMemorySummary } from "@/lib/memory"
 import { callOllamaAPI, ERROR_MESSAGES } from "@/lib/api-config"
 
 export const runtime = "edge"
-
-const sql = neon(process.env.DATABASE_URL!)
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,6 +30,7 @@ export async function POST(req: NextRequest) {
     if (conversationId && userId) {
       const userMessage = messages[messages.length - 1]
       if (userMessage && userMessage.role === "user") {
+        const sql = getSql()
         await sql`
           INSERT INTO messages (conversation_id, role, content)
           VALUES (${conversationId}, 'user', ${userMessage.content})
