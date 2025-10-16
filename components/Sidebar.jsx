@@ -202,10 +202,8 @@ export default function Sidebar({
           >
             <div className="flex items-center gap-2 border-b border-zinc-200/60 px-3 py-3 dark:border-zinc-800">
               <div className="flex items-center gap-2">
-                <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm dark:from-emerald-400 dark:to-teal-500">
-                  <span className="text-base font-bold">E</span>
-                </div>
-                <div className="text-sm font-semibold tracking-tight">Eburon AI</div>
+                <img src="/logo-light.png" alt="Eburon AI" className="h-8 w-auto dark:hidden" />
+                <img src="/logo-dark.png" alt="Eburon AI" className="hidden h-8 w-auto dark:block" />
               </div>
               <div className="ml-auto flex items-center gap-1">
                 <button

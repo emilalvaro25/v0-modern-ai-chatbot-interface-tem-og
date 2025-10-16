@@ -238,10 +238,8 @@ const ChatPane = forwardRef(function ChatPane(
         ) : (
           <div className="flex h-full flex-col items-center justify-center space-y-6 px-4">
             <div className="flex items-center gap-3">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-2xl font-bold shadow-lg">
-                E
-              </span>
-              <h1 className="text-4xl font-bold tracking-tight">Eburon AI</h1>
+              <img src="/logo-light.png" alt="Eburon AI" className="h-12 w-auto dark:hidden" />
+              <img src="/logo-dark.png" alt="Eburon AI" className="hidden h-12 w-auto dark:block" />
             </div>
             <p className="max-w-md text-center text-zinc-600 dark:text-zinc-400">
               Welcome! Create a new chat or select an existing conversation to get started.
