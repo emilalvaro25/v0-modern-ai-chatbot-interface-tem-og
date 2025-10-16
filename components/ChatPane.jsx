@@ -86,15 +86,13 @@ const ChatPane = forwardRef(function ChatPane(
     [],
   )
 
-  if (!conversation) return null
-
   const isCodingAgent = selectedModel === "qwen3-coder:480b-cloud"
   const tags = isCodingAgent
     ? ["Coding Agent", "Continuous Loop", "Tool-Enabled", "Web Search"]
     : ["Certified", "Personalized", "Experienced", "Helpful"]
 
-  const messages = Array.isArray(conversation.messages) ? conversation.messages : []
-  const count = messages.length || conversation.messageCount || 0
+  const messages = conversation ? (Array.isArray(conversation.messages) ? conversation.messages : []) : []
+  const count = messages.length || conversation?.messageCount || 0
 
   function startEdit(m) {
     setEditingId(m.id)
@@ -119,109 +117,145 @@ const ChatPane = forwardRef(function ChatPane(
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
       <div className="flex-1 space-y-5 overflow-y-auto px-4 py-6 sm:px-8">
-        <div className="mb-2 text-3xl font-serif tracking-tight sm:text-4xl md:text-5xl">
-          <span className="block leading-[1.05] font-sans text-2xl">{conversation.title}</span>
-        </div>
-        <div className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
-          Updated {timeAgo(conversation.updatedAt)} · {count} messages
-        </div>
-
-        <div className="mb-6 flex flex-wrap gap-2 border-b border-zinc-200 pb-5 dark:border-zinc-800">
-          {tags.map((t) => (
-            <span
-              key={t}
-              className={cls(
-                "inline-flex items-center rounded-full border px-3 py-1 text-xs",
-                isCodingAgent
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
-                  : "border-zinc-200 text-zinc-700 dark:border-zinc-800 dark:text-zinc-200",
-              )}
-            >
-              {t}
-            </span>
-          ))}
-        </div>
-
-        {messages.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-zinc-300 p-6 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
-            {isCodingAgent
-              ? "Ready to code! Ask me to build, debug, or optimize anything. I'll work continuously until it's perfect."
-              : "No messages yet. Say hello to start."}
-          </div>
-        ) : (
+        {conversation ? (
           <>
-            {messages.map((m) => (
-              <div key={m.id} className="space-y-2">
-                {editingId === m.id ? (
-                  <div className={cls("rounded-2xl border p-2", "border-zinc-200 dark:border-zinc-800")}>
-                    <textarea
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      className="w-full resize-y rounded-xl bg-transparent p-2 text-sm outline-none"
-                      rows={3}
-                    />
-                    <div className="mt-2 flex items-center gap-2">
-                      <button
-                        onClick={saveEdit}
-                        className="inline-flex items-center gap-1 rounded-full bg-zinc-900 px-3 py-1.5 text-xs text-white dark:bg-white dark:text-zinc-900"
-                      >
-                        <Check className="h-3.5 w-3.5" /> Save
-                      </button>
-                      <button
-                        onClick={saveAndResend}
-                        className="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs"
-                      >
-                        <RefreshCw className="h-3.5 w-3.5" /> Save & Resend
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs"
-                      >
-                        <X className="h-3.5 w-3.5" /> Cancel
-                      </button>
-                    </div>
+            <div className="mb-2 text-3xl font-serif tracking-tight sm:text-4xl md:text-5xl">
+              <span className="block leading-[1.05] font-sans text-2xl">{conversation.title}</span>
+            </div>
+            <div className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+              Updated {timeAgo(conversation.updatedAt)} · {count} messages
+            </div>
+
+            <div className="mb-6 flex flex-wrap gap-2 border-b border-zinc-200 pb-5 dark:border-zinc-800">
+              {tags.map((t) => (
+                <span
+                  key={t}
+                  className={cls(
+                    "inline-flex items-center rounded-full border px-3 py-1 text-xs",
+                    isCodingAgent
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
+                      : "border-zinc-200 text-zinc-700 dark:border-zinc-800 dark:text-zinc-200",
+                  )}
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+
+            {messages.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-zinc-300 p-6 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+                {isCodingAgent
+                  ? "Ready to code! Ask me to build, debug, or optimize anything. I'll work continuously until it's perfect."
+                  : "No messages yet. Say hello to start."}
+              </div>
+            ) : (
+              <>
+                {messages.map((m) => (
+                  <div key={m.id} className="space-y-2">
+                    {editingId === m.id ? (
+                      <div className={cls("rounded-2xl border p-2", "border-zinc-200 dark:border-zinc-800")}>
+                        <textarea
+                          value={draft}
+                          onChange={(e) => setDraft(e.target.value)}
+                          className="w-full resize-y rounded-xl bg-transparent p-2 text-sm outline-none"
+                          rows={3}
+                        />
+                        <div className="mt-2 flex items-center gap-2">
+                          <button
+                            onClick={saveEdit}
+                            className="inline-flex items-center gap-1 rounded-full bg-zinc-900 px-3 py-1.5 text-xs text-white dark:bg-white dark:text-zinc-900"
+                          >
+                            <Check className="h-3.5 w-3.5" /> Save
+                          </button>
+                          <button
+                            onClick={saveAndResend}
+                            className="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" /> Save & Resend
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs"
+                          >
+                            <X className="h-3.5 w-3.5" /> Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Message role={m.role}>
+                        <div className="whitespace-pre-wrap">{m.content}</div>
+                        {m.toolExecutions && m.toolExecutions.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            {m.toolExecutions.map((tool, idx) => (
+                              <ToolExecutionIndicator
+                                key={idx}
+                                tool={tool.name}
+                                status={tool.status}
+                                result={tool.result}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {m.role === "user" && (
+                          <div className="mt-1 flex gap-2 text-[11px] text-zinc-500">
+                            <button
+                              className="inline-flex items-center gap-1 hover:underline"
+                              onClick={() => startEdit(m)}
+                            >
+                              <Pencil className="h-3.5 w-3.5" /> Edit
+                            </button>
+                            <button
+                              className="inline-flex items-center gap-1 hover:underline"
+                              onClick={() => onResendMessage?.(m.id)}
+                            >
+                              <RefreshCw className="h-3.5 w-3.5" /> Resend
+                            </button>
+                          </div>
+                        )}
+                      </Message>
+                    )}
                   </div>
-                ) : (
-                  <Message role={m.role}>
-                    <div className="whitespace-pre-wrap">{m.content}</div>
-                    {m.toolExecutions && m.toolExecutions.length > 0 && (
-                      <div className="mt-3 space-y-2">
-                        {m.toolExecutions.map((tool, idx) => (
-                          <ToolExecutionIndicator
-                            key={idx}
-                            tool={tool.name}
-                            status={tool.status}
-                            result={tool.result}
-                          />
-                        ))}
-                      </div>
-                    )}
-                    {m.role === "user" && (
-                      <div className="mt-1 flex gap-2 text-[11px] text-zinc-500">
-                        <button className="inline-flex items-center gap-1 hover:underline" onClick={() => startEdit(m)}>
-                          <Pencil className="h-3.5 w-3.5" /> Edit
-                        </button>
-                        <button
-                          className="inline-flex items-center gap-1 hover:underline"
-                          onClick={() => onResendMessage?.(m.id)}
-                        >
-                          <RefreshCw className="h-3.5 w-3.5" /> Resend
-                        </button>
-                      </div>
-                    )}
-                  </Message>
-                )}
-              </div>
-            ))}
-            {toolExecutions.length > 0 && (
-              <div className="space-y-2">
-                {toolExecutions.map((tool, idx) => (
-                  <ToolExecutionIndicator key={idx} tool={tool.name} status={tool.status} result={tool.result} />
                 ))}
-              </div>
+                {toolExecutions.length > 0 && (
+                  <div className="space-y-2">
+                    {toolExecutions.map((tool, idx) => (
+                      <ToolExecutionIndicator key={idx} tool={tool.name} status={tool.status} result={tool.result} />
+                    ))}
+                  </div>
+                )}
+                {isThinking && (
+                  <ThinkingMessage onPause={onPauseThinking} currentStep={currentStep} progress={progress} />
+                )}
+              </>
             )}
-            {isThinking && <ThinkingMessage onPause={onPauseThinking} currentStep={currentStep} progress={progress} />}
           </>
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center space-y-6 px-4">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-2xl font-bold shadow-lg">
+                E
+              </span>
+              <h1 className="text-4xl font-bold tracking-tight">Eburon AI</h1>
+            </div>
+            <p className="max-w-md text-center text-zinc-600 dark:text-zinc-400">
+              Welcome! Create a new chat or select an existing conversation to get started.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {tags.map((t) => (
+                <span
+                  key={t}
+                  className={cls(
+                    "inline-flex items-center rounded-full border px-3 py-1 text-xs",
+                    isCodingAgent
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
+                      : "border-zinc-200 text-zinc-700 dark:border-zinc-800 dark:text-zinc-200",
+                  )}
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 

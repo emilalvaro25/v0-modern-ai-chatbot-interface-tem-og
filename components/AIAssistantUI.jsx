@@ -432,6 +432,14 @@ export default function AIAssistantUI() {
           }
         }
       }
+
+      const currentConv = conversations.find((c) => c.id === convId)
+      if (currentConv && currentConv.title === "New Chat" && assistantContent) {
+        generateAndUpdateTitle(convId, [
+          { role: "user", content },
+          { role: "assistant", content: assistantContent },
+        ])
+      }
     } catch (error) {
       console.error("[v0] Error sending message:", error)
       setIsThinking(false)
@@ -461,12 +469,48 @@ export default function AIAssistantUI() {
     }
   }
 
-  async function handlePlanApprove() {
+  async function generateAndUpdateTitle(convId, messages) {
+    try {
+      const response = await fetch("/api/conversations/generate-title", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages,
+          model: "gpt-oss:20b-cloud", // Use fast model for title generation
+        }),
+      })
+
+      if (!response.ok) {
+        console.error("[v0] Failed to generate title")
+        return
+      }
+
+      const data = await response.json()
+      const newTitle = data.title
+
+      const updateResponse = await fetch("/api/conversations", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId: convId,
+          title: newTitle,
+        }),
+      })
+
+      if (updateResponse.ok) {
+        setConversations((prev) => prev.map((c) => (c.id === convId ? { ...c, title: newTitle } : c)))
+      }
+    } catch (error) {
+      console.error("[v0] Error generating/updating title:", error)
+    }
+  }
+
+  function handlePlanApprove() {
     setShowPlanModal(false)
     if (pendingPrompt && pendingConvId) {
       // Execute with the plan context
       const enhancedPrompt = `${pendingPrompt}\n\n[Agent Plan]\n${JSON.stringify(currentPlan, null, 2)}`
-      await sendMessage(pendingConvId, enhancedPrompt, false)
+      sendMessage(pendingConvId, enhancedPrompt, false)
     }
     resetPlanState()
   }
@@ -593,7 +637,20 @@ export default function AIAssistantUI() {
           <ChatPane
             ref={composerRef}
             conversation={selected}
-            onSend={(content) => selected && sendMessage(selected.id, content, agentMode)}
+            onSend={(content) => {
+              if (!selected) {
+                createNewChat().then(() => {
+                  setTimeout(() => {
+                    const newConv = conversations[0]
+                    if (newConv) {
+                      sendMessage(newConv.id, content, agentMode)
+                    }
+                  }, 100)
+                })
+              } else {
+                sendMessage(selected.id, content, agentMode)
+              }
+            }}
             onEditMessage={(messageId, newContent) => selected && editMessage(selected.id, messageId, newContent)}
             onResendMessage={(messageId) => selected && resendMessage(selected.id, messageId)}
             isThinking={isThinking && thinkingConvId === selected?.id}

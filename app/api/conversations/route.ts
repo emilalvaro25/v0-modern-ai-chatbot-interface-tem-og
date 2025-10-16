@@ -51,6 +51,37 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// PATCH - Update a conversation title
+export async function PATCH(req: NextRequest) {
+  try {
+    const { conversationId, title } = await req.json()
+
+    if (!conversationId) {
+      return NextResponse.json({ error: "conversationId is required" }, { status: 400 })
+    }
+
+    if (!title) {
+      return NextResponse.json({ error: "title is required" }, { status: 400 })
+    }
+
+    const result = await sql`
+      UPDATE conversations
+      SET title = ${title}, updated_at = NOW()
+      WHERE id = ${conversationId}
+      RETURNING id, title, model, created_at, updated_at
+    `
+
+    if (result.length === 0) {
+      return NextResponse.json({ error: "Conversation not found" }, { status: 404 })
+    }
+
+    return NextResponse.json({ conversation: result[0] })
+  } catch (error) {
+    console.error("[v0] Error updating conversation:", error)
+    return NextResponse.json({ error: "Failed to update conversation" }, { status: 500 })
+  }
+}
+
 // DELETE - Delete a conversation
 export async function DELETE(req: NextRequest) {
   try {
