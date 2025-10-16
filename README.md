@@ -178,4 +178,7 @@ MIT
 
 ---
 
-**Built with ❤️ by Aquilles Team**
+**Built with ❤️ by Emilio AI**
+
+```
+```
