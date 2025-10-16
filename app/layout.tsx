@@ -1,16 +1,27 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { GeistSans } from "geist/font/sans"
-import { GeistMono } from "geist/font/mono"
+import { Inter, JetBrains_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import { TranslationProvider } from "@/contexts/TranslationContext"
 import "./globals.css"
 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+})
+
 export const metadata: Metadata = {
-  title: "Eburon AI - Powered by Ollama Cloud",
-  description: "Intelligent AI assistant powered by Ollama Cloud models",
-  generator: "v0.app",
+  title: "Eburon AI - The Fire Reborn",
+  description: "Intelligent AI assistant created by Emilio AI",
+  generator: "Eburon AI",
 }
 
 export default function RootLayout({
@@ -19,17 +30,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <style>{`
-html {
-  font-family: ${GeistSans.style.fontFamily};
-  --font-sans: ${GeistSans.variable};
-  --font-mono: ${GeistMono.variable};
-}
-        `}</style>
-      </head>
-      <body>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <body className="font-sans">
         <TranslationProvider>
           <Suspense fallback={<div className="h-screen w-full bg-zinc-50 dark:bg-zinc-950" />}>{children}</Suspense>
         </TranslationProvider>
