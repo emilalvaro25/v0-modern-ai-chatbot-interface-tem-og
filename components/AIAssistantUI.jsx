@@ -344,6 +344,7 @@ export default function AIAssistantUI() {
       })
 
       console.log("[v0] Response status:", response.status)
+      console.log("[v0] Response headers:", Object.fromEntries(response.headers.entries()))
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -351,10 +352,17 @@ export default function AIAssistantUI() {
         throw new Error(`API error: ${response.statusText}`)
       }
 
+      if (!response.body) {
+        console.error("[v0] No response body received")
+        throw new Error("No response body")
+      }
+
       const assistantMsgId = Math.random().toString(36).slice(2)
       let assistantContent = ""
       let assistantThinking = ""
       let toolExecutions = []
+
+      console.log("[v0] Creating assistant message placeholder...")
 
       setConversations((prev) =>
         prev.map((c) => {
@@ -380,102 +388,120 @@ export default function AIAssistantUI() {
       setIsThinking(false)
       setThinkingConvId(null)
 
-      const reader = response.body?.getReader()
+      console.log("[v0] Starting to read response stream...")
+
+      const reader = response.body.getReader()
       const decoder = new TextDecoder()
+      let chunkCount = 0
 
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
+      while (true) {
+        const { done, value } = await reader.read()
 
-          const chunk = decoder.decode(value, { stream: true })
-          const lines = chunk.split("\n").filter((line) => line.trim())
+        if (done) {
+          console.log("[v0] Stream complete. Total chunks:", chunkCount)
+          break
+        }
 
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const data = line.slice(6)
-              if (data === "[DONE]") break
+        chunkCount++
+        const chunk = decoder.decode(value, { stream: true })
+        console.log("[v0] Received chunk", chunkCount, "length:", chunk.length)
 
-              try {
-                const json = JSON.parse(data)
+        const lines = chunk.split("\n").filter((line) => line.trim())
+        console.log("[v0] Processing", lines.length, "lines from chunk", chunkCount)
 
-                if (json.message?.thinking) {
-                  assistantThinking += json.message.thinking
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6)
+            if (data === "[DONE]") {
+              console.log("[v0] Received [DONE] signal")
+              break
+            }
 
-                  setConversations((prev) =>
-                    prev.map((c) => {
-                      if (c.id !== convId) return c
-                      const msgs = (c.messages || []).map((m) =>
-                        m.id === assistantMsgId ? { ...m, thinking: assistantThinking } : m,
-                      )
-                      return { ...c, messages: msgs }
-                    }),
-                  )
-                }
+            try {
+              const json = JSON.parse(data)
+              console.log("[v0] Parsed JSON:", json)
 
-                if (json.type === "tool_call") {
-                  console.log("[v0] Tool call:", json.tool)
-                  toolExecutions.push({
-                    name: json.tool,
-                    status: "executing",
-                    args: json.args,
-                  })
+              if (json.message?.thinking) {
+                assistantThinking += json.message.thinking
+                console.log("[v0] Updated thinking, total length:", assistantThinking.length)
 
-                  setConversations((prev) =>
-                    prev.map((c) => {
-                      if (c.id !== convId) return c
-                      const msgs = (c.messages || []).map((m) =>
-                        m.id === assistantMsgId ? { ...m, toolExecutions: [...toolExecutions] } : m,
-                      )
-                      return { ...c, messages: msgs }
-                    }),
-                  )
-                }
-
-                if (json.type === "tool_result") {
-                  console.log("[v0] Tool result:", json.tool, json.result)
-                  toolExecutions = toolExecutions.map((t) =>
-                    t.name === json.tool ? { ...t, status: "completed", result: json.result } : t,
-                  )
-
-                  setConversations((prev) =>
-                    prev.map((c) => {
-                      if (c.id !== convId) return c
-                      const msgs = (c.messages || []).map((m) =>
-                        m.id === assistantMsgId ? { ...m, toolExecutions: [...toolExecutions] } : m,
-                      )
-                      return { ...c, messages: msgs }
-                    }),
-                  )
-                }
-
-                if (json.message?.content) {
-                  assistantContent += json.message.content
-
-                  setConversations((prev) =>
-                    prev.map((c) => {
-                      if (c.id !== convId) return c
-                      const msgs = (c.messages || []).map((m) =>
-                        m.id === assistantMsgId ? { ...m, content: assistantContent } : m,
-                      )
-                      return {
-                        ...c,
-                        messages: msgs,
-                        preview: assistantContent.slice(0, 80),
-                      }
-                    }),
-                  )
-                }
-              } catch (e) {
-                console.error("[v0] Error parsing stream:", e)
+                setConversations((prev) =>
+                  prev.map((c) => {
+                    if (c.id !== convId) return c
+                    const msgs = (c.messages || []).map((m) =>
+                      m.id === assistantMsgId ? { ...m, thinking: assistantThinking } : m,
+                    )
+                    return { ...c, messages: msgs }
+                  }),
+                )
               }
+
+              if (json.type === "tool_call") {
+                console.log("[v0] Tool call:", json.tool)
+                toolExecutions.push({
+                  name: json.tool,
+                  status: "executing",
+                  args: json.args,
+                })
+
+                setConversations((prev) =>
+                  prev.map((c) => {
+                    if (c.id !== convId) return c
+                    const msgs = (c.messages || []).map((m) =>
+                      m.id === assistantMsgId ? { ...m, toolExecutions: [...toolExecutions] } : m,
+                    )
+                    return { ...c, messages: msgs }
+                  }),
+                )
+              }
+
+              if (json.type === "tool_result") {
+                console.log("[v0] Tool result:", json.tool, json.result)
+                toolExecutions = toolExecutions.map((t) =>
+                  t.name === json.tool ? { ...t, status: "completed", result: json.result } : t,
+                )
+
+                setConversations((prev) =>
+                  prev.map((c) => {
+                    if (c.id !== convId) return c
+                    const msgs = (c.messages || []).map((m) =>
+                      m.id === assistantMsgId ? { ...m, toolExecutions: [...toolExecutions] } : m,
+                    )
+                    return { ...c, messages: msgs }
+                  }),
+                )
+              }
+
+              if (json.message?.content) {
+                assistantContent += json.message.content
+                console.log("[v0] Updated content, total length:", assistantContent.length)
+
+                setConversations((prev) =>
+                  prev.map((c) => {
+                    if (c.id !== convId) return c
+                    const msgs = (c.messages || []).map((m) =>
+                      m.id === assistantMsgId ? { ...m, content: assistantContent } : m,
+                    )
+                    return {
+                      ...c,
+                      messages: msgs,
+                      preview: assistantContent.slice(0, 80),
+                    }
+                  }),
+                )
+              }
+            } catch (e) {
+              console.error("[v0] Error parsing stream line:", e, "Line:", line)
             }
           }
         }
       }
 
+      console.log("[v0] Final assistant content length:", assistantContent.length)
+
       const currentConv = conversations.find((c) => c.id === convId)
       if (currentConv && currentConv.title === "New Chat" && assistantContent) {
+        console.log("[v0] Generating title for new conversation...")
         generateAndUpdateTitle(convId, [
           { role: "user", content },
           { role: "assistant", content: assistantContent },
@@ -483,6 +509,7 @@ export default function AIAssistantUI() {
       }
     } catch (error) {
       console.error("[v0] Error sending message:", error)
+      console.error("[v0] Error stack:", error.stack)
       setIsThinking(false)
       setThinkingConvId(null)
 
