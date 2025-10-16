@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Copy, Check } from "lucide-react"
 import { cls } from "./utils"
+import Image from "next/image"
 
 export default function Message({ role, children, thinking, content }) {
   const isUser = role === "user"
@@ -22,8 +23,14 @@ export default function Message({ role, children, thinking, content }) {
     <div className="space-y-2">
       {thinking && !isUser && (
         <div className="flex gap-2 sm:gap-3 justify-start">
-          <div className="mt-0.5 grid h-6 w-6 sm:h-7 sm:w-7 place-items-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-[10px] font-bold text-white flex-shrink-0">
-            E
+          <div className="mt-0.5 h-6 w-6 sm:h-7 sm:w-7 rounded-full overflow-hidden flex-shrink-0">
+            <Image
+              src="/eburon-icon.png"
+              alt="Eburon AI"
+              width={28}
+              height={28}
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="max-w-[85%] sm:max-w-[80%] rounded-2xl px-2.5 py-2 sm:px-3 text-xs sm:text-sm bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800">
             <div className="flex items-center gap-2 mb-2 text-[10px] sm:text-xs font-semibold text-emerald-700 dark:text-emerald-400">
@@ -38,8 +45,14 @@ export default function Message({ role, children, thinking, content }) {
       )}
       <div className={cls("flex gap-2 sm:gap-3", isUser ? "justify-end" : "justify-start")}>
         {!isUser && (
-          <div className="mt-0.5 grid h-6 w-6 sm:h-7 sm:w-7 place-items-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-[10px] font-bold text-white flex-shrink-0">
-            E
+          <div className="mt-0.5 h-6 w-6 sm:h-7 sm:w-7 rounded-full overflow-hidden flex-shrink-0">
+            <Image
+              src="/eburon-icon.png"
+              alt="Eburon AI"
+              width={28}
+              height={28}
+              className="w-full h-full object-cover"
+            />
           </div>
         )}
         <div className="relative max-w-[85%] sm:max-w-[80%] group">
