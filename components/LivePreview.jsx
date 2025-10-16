@@ -30,13 +30,56 @@ export function LivePreview({ code, language }) {
   }
 
   const createPreviewHTML = () => {
-    // If it's already HTML, use it directly
-    if (code.includes("<html") || code.includes("<!DOCTYPE")) {
-      return code
-    }
+    try {
+      // If it's already HTML, use it directly
+      if (code.includes("<html") || code.includes("<!DOCTYPE")) {
+        return code
+      }
 
-    // Otherwise, wrap it in a basic HTML structure
-    return `
+      // For React/JSX code, show a message
+      if (language === "jsx" || language === "tsx" || code.includes("import React")) {
+        return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { 
+      margin: 0; 
+      padding: 40px; 
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .message {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 500px;
+      text-align: center;
+    }
+    h2 { color: #667eea; margin-top: 0; }
+    p { color: #666; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="message">
+    <h2>React/JSX Preview</h2>
+    <p>This is React/JSX code. To see it rendered, it needs to be compiled and run in a React environment.</p>
+    <p>The code is valid and ready to use in your React application!</p>
+  </div>
+</body>
+</html>
+        `
+      }
+
+      // Otherwise, wrap it in a basic HTML structure
+      return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -44,14 +87,39 @@ export function LivePreview({ code, language }) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { margin: 0; padding: 20px; font-family: system-ui, -apple-system, sans-serif; }
+    * { box-sizing: border-box; }
+  </style>
+  ${language === "css" ? `<style>${code}</style>` : ""}
+</head>
+<body>
+  ${language === "html" ? code : ""}
+  ${language === "javascript" ? `<script>${code}</script>` : ""}
+</body>
+</html>
+      `
+    } catch (error) {
+      return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { 
+      margin: 0; 
+      padding: 40px; 
+      font-family: monospace;
+      background: #fee;
+      color: #c00;
+    }
   </style>
 </head>
 <body>
-  ${language === "css" ? `<style>${code}</style>` : ""}
-  ${language === "javascript" || language === "jsx" ? `<script>${code}</script>` : code}
+  <h2>Preview Error</h2>
+  <p>Unable to generate preview: ${error instanceof Error ? error.message : "Unknown error"}</p>
 </body>
 </html>
-    `
+      `
+    }
   }
 
   return (

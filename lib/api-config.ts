@@ -28,22 +28,24 @@ export async function callOllamaAPI(requestBody: any, usePrimary = true): Promis
     "Content-Type": "application/json",
   }
 
-  // Add auth header only if key exists (primary endpoint)
-  if (config.apiKey) {
+  if (config.apiKey && config.apiKey.trim() !== "") {
     headers["Authorization"] = `Bearer ${config.apiKey}`
   }
 
   console.log("[v0] Attempting connection to Emilio Server...")
   console.log("[v0] Using endpoint:", usePrimary ? "primary" : "fallback")
+  console.log("[v0] URL:", url)
 
   try {
     const response = await fetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(30000), // 30 second timeout
     })
 
     console.log("[v0] Response status:", response.status)
+    console.log("[v0] Response ok:", response.ok)
 
     // If primary fails, try fallback
     if (!response.ok && usePrimary) {
@@ -53,7 +55,7 @@ export async function callOllamaAPI(requestBody: any, usePrimary = true): Promis
 
     if (!response.ok) {
       console.error("[v0] Both endpoints failed")
-      const errorText = await response.text()
+      const errorText = await response.text().catch(() => "Unable to read error")
       console.error("[v0] Error details:", errorText)
     }
 
@@ -63,7 +65,12 @@ export async function callOllamaAPI(requestBody: any, usePrimary = true): Promis
     // Network error on primary, try fallback
     if (usePrimary) {
       console.log("[v0] Trying fallback after network error...")
-      return callOllamaAPI(requestBody, false)
+      try {
+        return await callOllamaAPI(requestBody, false)
+      } catch (fallbackError) {
+        console.error("[v0] Fallback also failed:", fallbackError)
+        throw error // Throw original error
+      }
     }
     throw error
   }

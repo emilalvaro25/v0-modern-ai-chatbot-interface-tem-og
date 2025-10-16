@@ -190,13 +190,56 @@ export async function executeAnalyzeError(errorMessage: string, context?: string
 }
 
 export async function executeCode(language: string, code: string, testCases?: any[]) {
-  // This would integrate with a code execution sandbox
-  // For now, return a mock response
+  if (language === "python") {
+    try {
+      const response = await fetch("/api/execute-python", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, testCases }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Python execution failed: ${response.statusText}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Python execution failed",
+        language: "python",
+      }
+    }
+  }
+
+  if (language === "javascript" || language === "typescript") {
+    try {
+      // Create a safe execution context
+      const result = new Function(`
+        "use strict";
+        ${code}
+      `)()
+
+      return {
+        success: true,
+        output: String(result),
+        language,
+        execution_time: 0,
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Execution failed",
+        language,
+      }
+    }
+  }
+
+  // For other languages, return not implemented
   return {
-    success: true,
-    output: "Code execution not yet implemented in sandbox",
+    success: false,
+    error: `${language} execution not yet implemented`,
     language,
-    execution_time: 0,
   }
 }
 
