@@ -68,27 +68,59 @@ The Alex-Coder model features a specialized agentic system inspired by Manus.im:
 Required environment variables (set in Vercel or `.env.local`):
 
 \`\`\`bash
+# Database Configuration
+DATABASE_URL=your_neon_database_url
+POSTGRES_URL=your_postgres_url
+
+# Upstash Redis Configuration (for caching and session management)
+UPSTASH_REDIS_REST_URL=your_upstash_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
+
+# Upstash Vector Configuration (for conversation search indexing)
+UPSTASH_VECTOR_REST_URL=your_upstash_vector_url
+UPSTASH_VECTOR_REST_TOKEN=your_upstash_vector_token
+
+# Upstash Search Configuration (custom search implementation)
+UPSTASH_SEARCH_REST_URL=your_upstash_search_url
+UPSTASH_SEARCH_REST_TOKEN=your_upstash_search_token
+
 # Ollama Cloud API
 OLLAMA_API_KEY=your_ollama_api_key
 
-# Neon Database
-DATABASE_URL=your_neon_database_url
-POSTGRES_URL=your_postgres_url
+# Authentication (if using NextAuth.js)
+NEXTAUTH_SECRET=your_super_secret_jwt_token_here
+NEXTAUTH_URL=http://localhost:3000
 \`\`\`
+
+Copy `.env.example` to `.env.local` and fill in your actual values.
 
 ## Getting Started
 
 1. Clone the repository
 2. Install dependencies:
    \`\`\`bash
-   npm install
+   pnpm install
    \`\`\`
-3. Set up environment variables in `.env.local`
-4. Run the development server:
+3. Set up environment variables:
    \`\`\`bash
-   npm run dev
+   cp .env.example .env.local
+   # Fill in your actual environment variable values
    \`\`\`
-5. Open [http://localhost:3000](http://localhost:3000)
+4. Build the application:
+   \`\`\`bash
+   pnpm run build --no-lint
+   \`\`\`
+5. Start the production server:
+   \`\`\`bash
+   pnpm start
+   \`\`\`
+6. Open [http://localhost:3000](http://localhost:3000)
+
+### Development Mode
+For development with hot-reloading:
+\`\`\`bash
+pnpm run dev
+\`\`\`
 
 ## Database Setup
 
