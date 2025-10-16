@@ -7,6 +7,7 @@ import Header from "./Header"
 import ChatPane from "./ChatPane"
 import GhostIconButton from "./GhostIconButton"
 import ThemeToggle from "./ThemeToggle"
+import PlanApprovalModal from "./PlanApprovalModal"
 
 export default function AIAssistantUI() {
   const [userId] = useState(() => {
@@ -98,6 +99,13 @@ export default function AIAssistantUI() {
 
   const [isThinking, setIsThinking] = useState(false)
   const [thinkingConvId, setThinkingConvId] = useState(null)
+
+  const [agentMode, setAgentMode] = useState(false)
+  const [showPlanModal, setShowPlanModal] = useState(false)
+  const [currentPlan, setCurrentPlan] = useState(null)
+  const [pendingPrompt, setPendingPrompt] = useState(null)
+  const [pendingConvId, setPendingConvId] = useState(null)
+  const [planThinking, setPlanThinking] = useState(false)
 
   useEffect(() => {
     if (!userId) return
@@ -238,8 +246,41 @@ export default function AIAssistantUI() {
     setFolders((prev) => [...prev, { id: Math.random().toString(36).slice(2), name }])
   }
 
-  async function sendMessage(convId, content) {
+  async function sendMessage(convId, content, isAgentMode = false) {
     if (!content.trim()) return
+
+    if (isAgentMode) {
+      setPendingPrompt(content)
+      setPendingConvId(convId)
+      setPlanThinking(true)
+      setShowPlanModal(true)
+
+      try {
+        const response = await fetch("/api/agent/plan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: content,
+            model: selectedModel,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to generate plan")
+        }
+
+        const data = await response.json()
+        setCurrentPlan(data.plan)
+        setPlanThinking(false)
+      } catch (error) {
+        console.error("[v0] Error generating plan:", error)
+        setPlanThinking(false)
+        setShowPlanModal(false)
+        alert("Failed to generate execution plan. Please try again.")
+      }
+      return
+    }
+
     const now = new Date().toISOString()
     const userMsg = { id: Math.random().toString(36).slice(2), role: "user", content, createdAt: now }
 
@@ -267,6 +308,8 @@ export default function AIAssistantUI() {
         content: m.content,
       }))
 
+      const isCodingAgent = selectedModel === "qwen3-coder:480b-cloud"
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -275,6 +318,7 @@ export default function AIAssistantUI() {
           model: selectedModel,
           conversationId: convId,
           userId,
+          enableTools: isCodingAgent,
         }),
       })
 
@@ -284,6 +328,7 @@ export default function AIAssistantUI() {
 
       const assistantMsgId = Math.random().toString(36).slice(2)
       let assistantContent = ""
+      let toolExecutions = []
 
       setConversations((prev) =>
         prev.map((c) => {
@@ -293,6 +338,7 @@ export default function AIAssistantUI() {
             role: "assistant",
             content: "",
             createdAt: new Date().toISOString(),
+            toolExecutions: [],
           }
           const msgs = [...(c.messages || []), asstMsg]
           return {
@@ -325,6 +371,43 @@ export default function AIAssistantUI() {
 
               try {
                 const json = JSON.parse(data)
+
+                if (json.type === "tool_call") {
+                  console.log("[v0] Tool call:", json.tool)
+                  toolExecutions.push({
+                    name: json.tool,
+                    status: "executing",
+                    args: json.args,
+                  })
+
+                  setConversations((prev) =>
+                    prev.map((c) => {
+                      if (c.id !== convId) return c
+                      const msgs = (c.messages || []).map((m) =>
+                        m.id === assistantMsgId ? { ...m, toolExecutions: [...toolExecutions] } : m,
+                      )
+                      return { ...c, messages: msgs }
+                    }),
+                  )
+                }
+
+                if (json.type === "tool_result") {
+                  console.log("[v0] Tool result:", json.tool, json.result)
+                  toolExecutions = toolExecutions.map((t) =>
+                    t.name === json.tool ? { ...t, status: "completed", result: json.result } : t,
+                  )
+
+                  setConversations((prev) =>
+                    prev.map((c) => {
+                      if (c.id !== convId) return c
+                      const msgs = (c.messages || []).map((m) =>
+                        m.id === assistantMsgId ? { ...m, toolExecutions: [...toolExecutions] } : m,
+                      )
+                      return { ...c, messages: msgs }
+                    }),
+                  )
+                }
+
                 if (json.message?.content) {
                   assistantContent += json.message.content
 
@@ -376,6 +459,37 @@ export default function AIAssistantUI() {
         }),
       )
     }
+  }
+
+  async function handlePlanApprove() {
+    setShowPlanModal(false)
+    if (pendingPrompt && pendingConvId) {
+      // Execute with the plan context
+      const enhancedPrompt = `${pendingPrompt}\n\n[Agent Plan]\n${JSON.stringify(currentPlan, null, 2)}`
+      await sendMessage(pendingConvId, enhancedPrompt, false)
+    }
+    resetPlanState()
+  }
+
+  function handlePlanReject() {
+    setShowPlanModal(false)
+    resetPlanState()
+  }
+
+  function handlePlanEdit() {
+    setShowPlanModal(false)
+    if (composerRef.current && currentPlan) {
+      const planText = `Original Request: ${pendingPrompt}\n\nProposed Plan:\n${currentPlan.tasks.map((t, i) => `${i + 1}. ${t}`).join("\n")}\n\nThinking: ${currentPlan.thinking}\n\nPlease modify the plan as needed:`
+      composerRef.current.insertTemplate(planText)
+    }
+    resetPlanState()
+  }
+
+  function resetPlanState() {
+    setCurrentPlan(null)
+    setPendingPrompt(null)
+    setPendingConvId(null)
+    setPlanThinking(false)
   }
 
   function editMessage(convId, messageId, newContent) {
@@ -479,15 +593,26 @@ export default function AIAssistantUI() {
           <ChatPane
             ref={composerRef}
             conversation={selected}
-            onSend={(content) => selected && sendMessage(selected.id, content)}
+            onSend={(content) => selected && sendMessage(selected.id, content, agentMode)}
             onEditMessage={(messageId, newContent) => selected && editMessage(selected.id, messageId, newContent)}
             onResendMessage={(messageId) => selected && resendMessage(selected.id, messageId)}
             isThinking={isThinking && thinkingConvId === selected?.id}
             onPauseThinking={pauseThinking}
             selectedModel={selectedModel}
+            agentMode={agentMode}
+            onAgentModeChange={setAgentMode}
           />
         </main>
       </div>
+
+      <PlanApprovalModal
+        isOpen={showPlanModal}
+        plan={currentPlan}
+        thinking={planThinking}
+        onApprove={handlePlanApprove}
+        onReject={handlePlanReject}
+        onEdit={handlePlanEdit}
+      />
     </div>
   )
 }

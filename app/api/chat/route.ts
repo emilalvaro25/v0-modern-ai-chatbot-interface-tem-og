@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 import { getSystemPrompt } from "@/lib/system-prompt"
+import { CODING_AGENT_SYSTEM_PROMPT } from "@/lib/coding-agent-prompt"
+import { CODING_AGENT_TOOLS, executeTool } from "@/lib/tools"
 
 export const runtime = "edge"
 
@@ -10,20 +12,20 @@ const sql = neon(process.env.DATABASE_URL!)
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, model, conversationId, userId } = await req.json()
+    const { messages, model, conversationId, userId, enableTools = false } = await req.json()
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: "Messages array is required" }, { status: 400 })
     }
 
-    // Get API key from environment variable
     const apiKey = process.env.OLLAMA_API_KEY
 
     if (!apiKey) {
       return NextResponse.json({ error: "OLLAMA_API_KEY environment variable is not set" }, { status: 500 })
     }
 
-    const systemPrompt = getSystemPrompt()
+    const isCodingAgent = model === "qwen3-coder:480b-cloud"
+    const systemPrompt = isCodingAgent ? CODING_AGENT_SYSTEM_PROMPT : getSystemPrompt()
     const messagesWithSystem = [{ role: "system", content: systemPrompt }, ...messages]
 
     if (conversationId && userId) {
@@ -36,18 +38,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Call Ollama Cloud API
+    const requestBody: any = {
+      model: model || "gpt-oss:120b-cloud",
+      messages: messagesWithSystem,
+      stream: true,
+    }
+
+    if (isCodingAgent && enableTools) {
+      requestBody.tools = CODING_AGENT_TOOLS
+    }
+
     const response = await fetch(`${OLLAMA_API_URL}/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: model || "gpt-oss:120b-cloud",
-        messages: messagesWithSystem,
-        stream: true,
-      }),
+      body: JSON.stringify(requestBody),
     })
 
     if (!response.ok) {
@@ -60,6 +67,8 @@ export async function POST(req: NextRequest) {
     const decoder = new TextDecoder()
     let fullAssistantMessage = ""
     let buffer = ""
+    const toolCalls: any[] = []
+    const currentToolCall: any = null
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -78,7 +87,6 @@ export async function POST(req: NextRequest) {
             buffer += chunk
 
             const lines = buffer.split("\n")
-            // Keep the last incomplete line in the buffer
             buffer = lines.pop() || ""
 
             for (const line of lines) {
@@ -87,6 +95,92 @@ export async function POST(req: NextRequest) {
 
               try {
                 const json = JSON.parse(trimmedLine)
+
+                if (json.message?.tool_calls) {
+                  for (const toolCall of json.message.tool_calls) {
+                    console.log("[v0] Tool call detected:", toolCall.function.name)
+
+                    // Send tool call notification to client
+                    controller.enqueue(
+                      encoder.encode(
+                        `data: ${JSON.stringify({
+                          type: "tool_call",
+                          tool: toolCall.function.name,
+                          args: toolCall.function.arguments,
+                        })}\n\n`,
+                      ),
+                    )
+
+                    // Execute tool
+                    const toolResult = await executeTool(toolCall.function.name, toolCall.function.arguments)
+
+                    console.log("[v0] Tool result:", toolResult)
+
+                    // Send tool result to client
+                    controller.enqueue(
+                      encoder.encode(
+                        `data: ${JSON.stringify({
+                          type: "tool_result",
+                          tool: toolCall.function.name,
+                          result: toolResult,
+                        })}\n\n`,
+                      ),
+                    )
+
+                    // Add tool result to messages and continue conversation
+                    messagesWithSystem.push({
+                      role: "tool",
+                      name: toolCall.function.name,
+                      content: JSON.stringify(toolResult),
+                    })
+
+                    // Make another API call with tool results
+                    const followUpResponse = await fetch(`${OLLAMA_API_URL}/chat`, {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${apiKey}`,
+                      },
+                      body: JSON.stringify({
+                        model: model || "gpt-oss:120b-cloud",
+                        messages: messagesWithSystem,
+                        stream: true,
+                        tools: isCodingAgent && enableTools ? CODING_AGENT_TOOLS : undefined,
+                      }),
+                    })
+
+                    // Stream the follow-up response
+                    const followUpReader = followUpResponse.body?.getReader()
+                    if (followUpReader) {
+                      let followUpBuffer = ""
+                      while (true) {
+                        const { done: followUpDone, value: followUpValue } = await followUpReader.read()
+                        if (followUpDone) break
+
+                        const followUpChunk = decoder.decode(followUpValue, { stream: true })
+                        followUpBuffer += followUpChunk
+
+                        const followUpLines = followUpBuffer.split("\n")
+                        followUpBuffer = followUpLines.pop() || ""
+
+                        for (const followUpLine of followUpLines) {
+                          const trimmedFollowUpLine = followUpLine.trim()
+                          if (!trimmedFollowUpLine) continue
+
+                          try {
+                            const followUpJson = JSON.parse(trimmedFollowUpLine)
+                            if (followUpJson.message?.content) {
+                              fullAssistantMessage += followUpJson.message.content
+                              controller.enqueue(encoder.encode(`data: ${JSON.stringify(followUpJson)}\n\n`))
+                            }
+                          } catch (e) {
+                            // Ignore parse errors
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
 
                 if (json.message?.content) {
                   fullAssistantMessage += json.message.content

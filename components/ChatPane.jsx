@@ -1,39 +1,79 @@
 "use client"
 
 import { useState, forwardRef, useImperativeHandle, useRef } from "react"
-import { Pencil, RefreshCw, Check, X, Square } from "lucide-react"
+import { Pencil, RefreshCw, Check, X, Square, Loader2, Search, Code, FileText, CheckCircle2 } from "lucide-react"
 import Message from "./Message"
 import Composer from "./Composer"
 import { cls, timeAgo } from "./utils"
 
-function ThinkingMessage({ onPause }) {
+function ToolExecutionIndicator({ tool, status, result }) {
+  const icons = {
+    web_search: Search,
+    analyze_error: Code,
+    execute_code: Code,
+    read_documentation: FileText,
+    validate_code: CheckCircle2,
+  }
+
+  const Icon = icons[tool] || Code
+
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm dark:border-emerald-900 dark:bg-emerald-950">
+      <Icon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+      <span className="text-emerald-700 dark:text-emerald-300">
+        {status === "executing" && `Executing ${tool}...`}
+        {status === "completed" && `Completed ${tool}`}
+      </span>
+      {status === "executing" && <Loader2 className="ml-auto h-4 w-4 animate-spin text-emerald-600" />}
+      {status === "completed" && <CheckCircle2 className="ml-auto h-4 w-4 text-emerald-600" />}
+    </div>
+  )
+}
+
+function ThinkingMessage({ onPause, currentStep, progress }) {
   return (
     <Message role="assistant">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1">
-          <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.3s]"></div>
-          <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.15s]"></div>
-          <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400"></div>
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
+            <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.3s]"></div>
+            <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.15s]"></div>
+            <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400"></div>
+          </div>
+          <span className="text-sm text-zinc-500">{currentStep || "AI is thinking..."}</span>
+          <button
+            onClick={onPause}
+            className="ml-auto inline-flex items-center gap-1 rounded-full border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+          >
+            <Square className="h-3 w-3" /> Pause
+          </button>
         </div>
-        <span className="text-sm text-zinc-500">AI is thinking...</span>
-        <button
-          onClick={onPause}
-          className="ml-auto inline-flex items-center gap-1 rounded-full border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
-        >
-          <Square className="h-3 w-3" /> Pause
-        </button>
+        {progress && <div className="text-xs text-zinc-400">{progress}</div>}
       </div>
     </Message>
   )
 }
 
 const ChatPane = forwardRef(function ChatPane(
-  { conversation, onSend, onEditMessage, onResendMessage, isThinking, onPauseThinking },
+  {
+    conversation,
+    onSend,
+    onEditMessage,
+    onResendMessage,
+    isThinking,
+    onPauseThinking,
+    selectedModel,
+    agentMode,
+    onAgentModeChange,
+  },
   ref,
 ) {
   const [editingId, setEditingId] = useState(null)
   const [draft, setDraft] = useState("")
   const [busy, setBusy] = useState(false)
+  const [toolExecutions, setToolExecutions] = useState([])
+  const [currentStep, setCurrentStep] = useState("")
+  const [progress, setProgress] = useState("")
   const composerRef = useRef(null)
 
   useImperativeHandle(
@@ -48,7 +88,11 @@ const ChatPane = forwardRef(function ChatPane(
 
   if (!conversation) return null
 
-  const tags = ["Certified", "Personalized", "Experienced", "Helpful"]
+  const isCodingAgent = selectedModel === "qwen3-coder:480b-cloud"
+  const tags = isCodingAgent
+    ? ["Coding Agent", "Continuous Loop", "Tool-Enabled", "Web Search"]
+    : ["Certified", "Personalized", "Experienced", "Helpful"]
+
   const messages = Array.isArray(conversation.messages) ? conversation.messages : []
   const count = messages.length || conversation.messageCount || 0
 
@@ -86,7 +130,12 @@ const ChatPane = forwardRef(function ChatPane(
           {tags.map((t) => (
             <span
               key={t}
-              className="inline-flex items-center rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-700 dark:border-zinc-800 dark:text-zinc-200"
+              className={cls(
+                "inline-flex items-center rounded-full border px-3 py-1 text-xs",
+                isCodingAgent
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
+                  : "border-zinc-200 text-zinc-700 dark:border-zinc-800 dark:text-zinc-200",
+              )}
             >
               {t}
             </span>
@@ -95,7 +144,9 @@ const ChatPane = forwardRef(function ChatPane(
 
         {messages.length === 0 ? (
           <div className="rounded-xl border border-dashed border-zinc-300 p-6 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
-            No messages yet. Say hello to start.
+            {isCodingAgent
+              ? "Ready to code! Ask me to build, debug, or optimize anything. I'll work continuously until it's perfect."
+              : "No messages yet. Say hello to start."}
           </div>
         ) : (
           <>
@@ -133,6 +184,18 @@ const ChatPane = forwardRef(function ChatPane(
                 ) : (
                   <Message role={m.role}>
                     <div className="whitespace-pre-wrap">{m.content}</div>
+                    {m.toolExecutions && m.toolExecutions.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {m.toolExecutions.map((tool, idx) => (
+                          <ToolExecutionIndicator
+                            key={idx}
+                            tool={tool.name}
+                            status={tool.status}
+                            result={tool.result}
+                          />
+                        ))}
+                      </div>
+                    )}
                     {m.role === "user" && (
                       <div className="mt-1 flex gap-2 text-[11px] text-zinc-500">
                         <button className="inline-flex items-center gap-1 hover:underline" onClick={() => startEdit(m)}>
@@ -150,7 +213,14 @@ const ChatPane = forwardRef(function ChatPane(
                 )}
               </div>
             ))}
-            {isThinking && <ThinkingMessage onPause={onPauseThinking} />}
+            {toolExecutions.length > 0 && (
+              <div className="space-y-2">
+                {toolExecutions.map((tool, idx) => (
+                  <ToolExecutionIndicator key={idx} tool={tool.name} status={tool.status} result={tool.result} />
+                ))}
+              </div>
+            )}
+            {isThinking && <ThinkingMessage onPause={onPauseThinking} currentStep={currentStep} progress={progress} />}
           </>
         )}
       </div>
@@ -160,10 +230,15 @@ const ChatPane = forwardRef(function ChatPane(
         onSend={async (text) => {
           if (!text.trim()) return
           setBusy(true)
+          setToolExecutions([])
+          setCurrentStep("")
+          setProgress("")
           await onSend?.(text)
           setBusy(false)
         }}
         busy={busy}
+        agentMode={agentMode}
+        onAgentModeChange={onAgentModeChange}
       />
     </div>
   )

@@ -2,8 +2,9 @@
 import { useState } from "react"
 import { Paperclip, Bot, Search, Palette, BookOpen, MoreHorizontal, Globe, ChevronRight } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
+import { cls } from "./utils"
 
-export default function ComposerActionsPopover({ children }) {
+export default function ComposerActionsPopover({ children, agentMode, onAgentModeChange }) {
   const [open, setOpen] = useState(false)
   const [showMore, setShowMore] = useState(false)
 
@@ -17,7 +18,10 @@ export default function ComposerActionsPopover({ children }) {
       icon: Bot,
       label: "Agent mode",
       badge: "NEW",
-      action: () => console.log("Agent mode"),
+      action: () => {
+        onAgentModeChange?.(!agentMode)
+      },
+      active: agentMode,
     },
     {
       icon: Search,
@@ -98,7 +102,6 @@ export default function ComposerActionsPopover({ children }) {
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent className="w-96 p-0" align="start" side="top">
         {!showMore ? (
-          // Main actions view
           <div className="p-3">
             <div className="space-y-1">
               {mainActions.map((action, index) => {
@@ -107,7 +110,11 @@ export default function ComposerActionsPopover({ children }) {
                   <button
                     key={index}
                     onClick={() => handleAction(action.action)}
-                    className="flex items-center gap-3 w-full p-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
+                    className={cls(
+                      "flex items-center gap-3 w-full p-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg",
+                      action.active &&
+                        "bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800",
+                    )}
                   >
                     <IconComponent className="h-4 w-4" />
                     <span>{action.label}</span>
@@ -115,6 +122,16 @@ export default function ComposerActionsPopover({ children }) {
                       <span className="ml-auto px-2 py-0.5 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 rounded-full">
                         {action.badge}
                       </span>
+                    )}
+                    {action.active && (
+                      <svg
+                        className="h-4 w-4 ml-auto text-emerald-600 dark:text-emerald-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
                     )}
                   </button>
                 )
@@ -130,7 +147,6 @@ export default function ComposerActionsPopover({ children }) {
             </div>
           </div>
         ) : (
-          // More options view with two columns
           <div className="flex">
             <div className="flex-1 p-3 border-r border-zinc-200 dark:border-zinc-800">
               <div className="space-y-1">
@@ -140,7 +156,11 @@ export default function ComposerActionsPopover({ children }) {
                     <button
                       key={index}
                       onClick={() => handleAction(action.action)}
-                      className="flex items-center gap-3 w-full p-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
+                      className={cls(
+                        "flex items-center gap-3 w-full p-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg",
+                        action.active &&
+                          "bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800",
+                      )}
                     >
                       <IconComponent className="h-4 w-4" />
                       <span>{action.label}</span>
@@ -148,6 +168,16 @@ export default function ComposerActionsPopover({ children }) {
                         <span className="ml-auto px-2 py-0.5 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 rounded-full">
                           {action.badge}
                         </span>
+                      )}
+                      {action.active && (
+                        <svg
+                          className="h-4 w-4 ml-auto text-emerald-600 dark:text-emerald-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
                       )}
                     </button>
                   )

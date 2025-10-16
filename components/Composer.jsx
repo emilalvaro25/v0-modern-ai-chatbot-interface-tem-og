@@ -5,7 +5,7 @@ import { Send, Loader2, Plus, Mic } from "lucide-react"
 import ComposerActionsPopover from "./ComposerActionsPopover"
 import { cls } from "./utils"
 
-const Composer = forwardRef(function Composer({ onSend, busy }, ref) {
+const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgentModeChange }, ref) {
   const [value, setValue] = useState("")
   const [sending, setSending] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
@@ -62,7 +62,7 @@ const Composer = forwardRef(function Composer({ onSend, busy }, ref) {
     if (!value.trim() || sending) return
     setSending(true)
     try {
-      await onSend?.(value)
+      await onSend?.(value, agentMode)
       setValue("")
       inputRef.current?.focus()
     } finally {
@@ -107,14 +107,30 @@ const Composer = forwardRef(function Composer({ onSend, busy }, ref) {
         </div>
 
         <div className="flex items-center justify-between mt-2">
-          <ComposerActionsPopover>
-            <button
-              className="inline-flex shrink-0 items-center justify-center rounded-full p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 transition-colors"
-              title="Add attachment"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-          </ComposerActionsPopover>
+          <div className="flex items-center gap-2">
+            <ComposerActionsPopover agentMode={agentMode} onAgentModeChange={onAgentModeChange}>
+              <button
+                className="inline-flex shrink-0 items-center justify-center rounded-full p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 transition-colors"
+                title="Add attachment"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </ComposerActionsPopover>
+
+            {agentMode && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-full shadow-sm">
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+                Agent
+              </span>
+            )}
+          </div>
 
           <div className="flex items-center gap-1 shrink-0">
             <button
