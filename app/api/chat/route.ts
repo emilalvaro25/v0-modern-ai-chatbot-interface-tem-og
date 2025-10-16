@@ -4,10 +4,9 @@ import { getSystemPrompt } from "@/lib/system-prompt"
 import { CODING_AGENT_SYSTEM_PROMPT } from "@/lib/coding-agent-prompt"
 import { EBURON_TOOLS, executeTool } from "@/lib/tools"
 import { buildAIMemory, generateMemorySummary } from "@/lib/memory"
+import { fetchWithFallback, ERROR_MESSAGES } from "@/lib/api-config"
 
 export const runtime = "edge"
-
-const OLLAMA_API_URL = "https://ollama.com/api"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -17,12 +16,6 @@ export async function POST(req: NextRequest) {
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: "Messages array is required" }, { status: 400 })
-    }
-
-    const apiKey = process.env.OLLAMA_API_KEY
-
-    if (!apiKey) {
-      return NextResponse.json({ error: "OLLAMA_API_KEY environment variable is not set" }, { status: 500 })
     }
 
     let memoryContext = ""
@@ -54,9 +47,9 @@ export async function POST(req: NextRequest) {
 
     if (model === "qwen3-coder:480b-cloud") {
       requestBody.options = {
-        num_ctx: 32768, // 32K context window
+        num_ctx: 32768,
       }
-      requestBody.think = true // Always enable thinking for Alex-Coder
+      requestBody.think = true
     }
 
     if (enableThinking) {
@@ -67,27 +60,25 @@ export async function POST(req: NextRequest) {
       requestBody.tools = EBURON_TOOLS
     }
 
-    const response = await fetch(`${OLLAMA_API_URL}/chat`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(requestBody),
-    })
+    let response: Response
+    try {
+      response = await fetchWithFallback("/api/chat", {
+        method: "POST",
+        body: JSON.stringify(requestBody),
+      })
+    } catch (error) {
+      console.error("[System] All endpoints failed:", error)
+      return NextResponse.json({ error: ERROR_MESSAGES.AI_UNAVAILABLE }, { status: 503 })
+    }
 
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error("[v0] Ollama API error:", errorText)
-      return NextResponse.json({ error: `Ollama API error: ${response.statusText}` }, { status: response.status })
+      return NextResponse.json({ error: ERROR_MESSAGES.AI_UNAVAILABLE }, { status: response.status })
     }
 
     const encoder = new TextEncoder()
     const decoder = new TextDecoder()
     let fullAssistantMessage = ""
     let buffer = ""
-    const toolCalls: any[] = []
-    const currentToolCall: any = null
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -117,9 +108,6 @@ export async function POST(req: NextRequest) {
 
                 if (json.message?.tool_calls) {
                   for (const toolCall of json.message.tool_calls) {
-                    console.log("[v0] Tool call detected:", toolCall.function.name)
-
-                    // Send tool call notification to client
                     controller.enqueue(
                       encoder.encode(
                         `data: ${JSON.stringify({
@@ -130,12 +118,8 @@ export async function POST(req: NextRequest) {
                       ),
                     )
 
-                    // Execute tool
                     const toolResult = await executeTool(toolCall.function.name, toolCall.function.arguments)
 
-                    console.log("[v0] Tool result:", toolResult)
-
-                    // Send tool result to client
                     controller.enqueue(
                       encoder.encode(
                         `data: ${JSON.stringify({
@@ -146,20 +130,14 @@ export async function POST(req: NextRequest) {
                       ),
                     )
 
-                    // Add tool result to messages and continue conversation
                     messagesWithSystem.push({
                       role: "tool",
                       name: toolCall.function.name,
                       content: JSON.stringify(toolResult),
                     })
 
-                    // Make another API call with tool results
-                    const followUpResponse = await fetch(`${OLLAMA_API_URL}/chat`, {
+                    const followUpResponse = await fetchWithFallback("/api/chat", {
                       method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${apiKey}`,
-                      },
                       body: JSON.stringify({
                         model: model || "gpt-oss:120b-cloud",
                         messages: messagesWithSystem,
@@ -168,7 +146,6 @@ export async function POST(req: NextRequest) {
                       }),
                     })
 
-                    // Stream the follow-up response
                     const followUpReader = followUpResponse.body?.getReader()
                     if (followUpReader) {
                       let followUpBuffer = ""
@@ -226,9 +203,7 @@ export async function POST(req: NextRequest) {
                   controller.enqueue(encoder.encode("data: [DONE]\n\n"))
                 }
               } catch (e) {
-                if (trimmedLine) {
-                  console.error("[v0] Error parsing JSON line:", trimmedLine.substring(0, 100), e)
-                }
+                // Silently ignore JSON parse errors
               }
             }
           }
@@ -255,11 +230,10 @@ export async function POST(req: NextRequest) {
                 controller.enqueue(encoder.encode("data: [DONE]\n\n"))
               }
             } catch (e) {
-              console.error("[v0] Error parsing final buffer:", buffer.substring(0, 100), e)
+              // Silently ignore final buffer parse errors
             }
           }
         } catch (error) {
-          console.error("[v0] Stream error:", error)
           controller.error(error)
         } finally {
           controller.close()
@@ -275,7 +249,6 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("[v0] API route error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ error: ERROR_MESSAGES.GENERIC }, { status: 500 })
   }
 }

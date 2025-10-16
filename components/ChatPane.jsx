@@ -215,6 +215,16 @@ const ChatPane = forwardRef(function ChatPane(
     ? modelPresets["gpt-oss:120b-cloud"]
     : modelPresets[actualModel] || modelPresets["gpt-oss:120b-cloud"]
 
+  const handlePresetClick = async (prompt) => {
+    if (!prompt.trim() || busy) return
+    setBusy(true)
+    setToolExecutions([])
+    setCurrentStep("")
+    setProgress("")
+    await onSend?.(prompt)
+    setBusy(false)
+  }
+
   const tags = isCodingAgent
     ? ["Coding Agent", "32K Context", "Thinking Mode", "Tool-Enabled"]
     : isThinkingMode
@@ -410,8 +420,9 @@ const ChatPane = forwardRef(function ChatPane(
                 {currentPresets.map((preset) => (
                   <button
                     key={preset.title}
-                    onClick={() => composerRef.current?.insertTemplate(preset.prompt)}
-                    className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-400"
+                    onClick={() => handlePresetClick(preset.prompt)}
+                    disabled={busy}
+                    className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-400"
                   >
                     {preset.title}
                   </button>
@@ -423,8 +434,9 @@ const ChatPane = forwardRef(function ChatPane(
                 {currentPresets.map((preset) => (
                   <button
                     key={preset.title}
-                    onClick={() => composerRef.current?.insertTemplate(preset.prompt)}
-                    className="group flex flex-col items-start gap-2 rounded-xl border border-zinc-200 bg-white p-4 text-left transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30"
+                    onClick={() => handlePresetClick(preset.prompt)}
+                    disabled={busy}
+                    className="group flex flex-col items-start gap-2 rounded-xl border border-zinc-200 bg-white p-4 text-left transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30"
                   >
                     <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
                       {preset.title}

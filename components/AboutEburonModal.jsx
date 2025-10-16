@@ -176,6 +176,31 @@ export default function AboutEburonModal({ isOpen, onClose }) {
                 </div>
               </div>
             </div>
+
+            {/* Ollama Cloud Setup Instructions */}
+            <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-6 dark:border-blue-900 dark:bg-blue-950/30">
+              <h2 className="mb-4 text-xl font-bold text-zinc-900 dark:text-white">Ollama Cloud Setup</h2>
+              <p className="mb-4 text-sm text-zinc-700 dark:text-zinc-300">
+                To use Eburon AI with Ollama Cloud models, run these commands in your terminal:
+              </p>
+              <div className="space-y-3">
+                <div className="rounded-lg bg-zinc-900 p-4 font-mono text-sm text-white dark:bg-zinc-950">
+                  <div className="mb-2 text-xs text-zinc-400"># Sign in to Ollama Cloud</div>
+                  <code className="text-emerald-400">ollama signin</code>
+                </div>
+                <div className="rounded-lg bg-zinc-900 p-4 font-mono text-sm text-white dark:bg-zinc-950">
+                  <div className="mb-2 text-xs text-zinc-400"># Pull required models</div>
+                  <code className="block text-cyan-400">ollama pull deepseek-v3.1:671b-cloud</code>
+                  <code className="block text-cyan-400">ollama pull gpt-oss:20b-cloud</code>
+                  <code className="block text-cyan-400">ollama pull gpt-oss:120b-cloud</code>
+                  <code className="block text-cyan-400">ollama pull kimi-k2:1t-cloud</code>
+                  <code className="block text-cyan-400">ollama pull qwen3-coder:480b-cloud</code>
+                </div>
+              </div>
+              <p className="mt-4 text-xs text-zinc-600 dark:text-zinc-400">
+                These commands will authenticate your Ollama account and download all the AI models used by Eburon AI.
+              </p>
+            </div>
           </div>
 
           {/* Footer */}

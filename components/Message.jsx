@@ -1,13 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { Copy, Check } from "lucide-react"
+import { Copy, Check, ChevronDown, ChevronUp } from "lucide-react"
 import { cls } from "./utils"
 import Image from "next/image"
 
 export default function Message({ role, children, thinking, content }) {
   const isUser = role === "user"
   const [copied, setCopied] = useState(false)
+  const [thinkingExpanded, setThinkingExpanded] = useState(false)
 
   const handleCopy = async () => {
     try {
@@ -33,13 +34,19 @@ export default function Message({ role, children, thinking, content }) {
             />
           </div>
           <div className="max-w-[85%] sm:max-w-[80%] rounded-2xl px-2.5 py-2 sm:px-3 text-xs sm:text-sm bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800">
-            <div className="flex items-center gap-2 mb-2 text-[10px] sm:text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+            <button
+              onClick={() => setThinkingExpanded(!thinkingExpanded)}
+              className="flex items-center gap-2 w-full text-left mb-2 text-[10px] sm:text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors"
+            >
               <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              Thinking...
-            </div>
-            <div className="text-[10px] sm:text-xs text-emerald-900/70 dark:text-emerald-100/70 whitespace-pre-wrap font-mono">
-              {thinking}
-            </div>
+              <span className="flex-1">Thinking Process</span>
+              {thinkingExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </button>
+            {thinkingExpanded && (
+              <div className="text-[10px] sm:text-xs text-emerald-900/70 dark:text-emerald-100/70 whitespace-pre-wrap font-mono">
+                {thinking}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { fetchWithFallback } from "@/lib/api-config"
 
 export const runtime = "edge"
 
-// POST - Generate a conversation title based on messages
 export async function POST(req: NextRequest) {
   try {
     const { messages, model } = await req.json()
@@ -20,27 +20,27 @@ ${messages.map((m: any) => `${m.role}: ${m.content}`).join("\n")}
 
 Title:`
 
-    const response = await fetch("https://api.ollama.cloud/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OLLAMA_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: titleModel,
-        messages: [{ role: "user", content: titlePrompt }],
-        stream: false,
-        temperature: 0.7,
-        max_tokens: 20,
-      }),
-    })
+    let response: Response
+    try {
+      response = await fetchWithFallback("/api/chat", {
+        method: "POST",
+        body: JSON.stringify({
+          model: titleModel,
+          messages: [{ role: "user", content: titlePrompt }],
+          stream: false,
+          temperature: 0.7,
+        }),
+      })
+    } catch (error) {
+      return NextResponse.json({ title: "New Chat" })
+    }
 
     if (!response.ok) {
-      throw new Error(`Ollama API error: ${response.statusText}`)
+      return NextResponse.json({ title: "New Chat" })
     }
 
     const data = await response.json()
-    let title = data.choices?.[0]?.message?.content?.trim() || "New Chat"
+    let title = data.message?.content?.trim() || "New Chat"
 
     title = title
       .replace(/^["']|["']$/g, "")
@@ -54,7 +54,6 @@ Title:`
 
     return NextResponse.json({ title })
   } catch (error) {
-    console.error("[v0] Error generating title:", error)
-    return NextResponse.json({ error: "Failed to generate title" }, { status: 500 })
+    return NextResponse.json({ title: "New Chat" })
   }
 }
