@@ -87,9 +87,12 @@ const ChatPane = forwardRef(function ChatPane(
   )
 
   const isCodingAgent = selectedModel === "qwen3-coder:480b-cloud"
+  const isThinkingMode = selectedModel === "gpt-oss:120b-cloud-thinking"
   const tags = isCodingAgent
     ? ["Coding Agent", "Continuous Loop", "Tool-Enabled", "Web Search"]
-    : ["Certified", "Personalized", "Experienced", "Helpful"]
+    : isThinkingMode
+      ? ["Thinking Mode", "Deep Reasoning", "Chain-of-Thought", "Analytical"]
+      : ["Certified", "Personalized", "Experienced", "Helpful"]
 
   const messages = conversation ? (Array.isArray(conversation.messages) ? conversation.messages : []) : []
   const count = messages.length || conversation?.messageCount || 0
@@ -132,7 +135,7 @@ const ChatPane = forwardRef(function ChatPane(
                   key={t}
                   className={cls(
                     "inline-flex items-center rounded-full border px-3 py-1 text-xs",
-                    isCodingAgent
+                    isCodingAgent || isThinkingMode
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
                       : "border-zinc-200 text-zinc-700 dark:border-zinc-800 dark:text-zinc-200",
                   )}
@@ -146,7 +149,9 @@ const ChatPane = forwardRef(function ChatPane(
               <div className="rounded-xl border border-dashed border-zinc-300 p-6 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
                 {isCodingAgent
                   ? "Ready to code! Ask me to build, debug, or optimize anything. I'll work continuously until it's perfect."
-                  : "No messages yet. Say hello to start."}
+                  : isThinkingMode
+                    ? "Thinking mode enabled. I'll show you my reasoning process before providing answers."
+                    : "No messages yet. Say hello to start."}
               </div>
             ) : (
               <>
@@ -182,7 +187,7 @@ const ChatPane = forwardRef(function ChatPane(
                         </div>
                       </div>
                     ) : (
-                      <Message role={m.role}>
+                      <Message role={m.role} thinking={m.thinking}>
                         <div className="whitespace-pre-wrap">{m.content}</div>
                         {m.toolExecutions && m.toolExecutions.length > 0 && (
                           <div className="mt-3 space-y-2">
@@ -246,7 +251,7 @@ const ChatPane = forwardRef(function ChatPane(
                   key={t}
                   className={cls(
                     "inline-flex items-center rounded-full border px-3 py-1 text-xs",
-                    isCodingAgent
+                    isCodingAgent || isThinkingMode
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
                       : "border-zinc-200 text-zinc-700 dark:border-zinc-800 dark:text-zinc-200",
                   )}

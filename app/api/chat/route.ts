@@ -12,7 +12,7 @@ const sql = neon(process.env.DATABASE_URL!)
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, model, conversationId, userId, enableTools = false } = await req.json()
+    const { messages, model, conversationId, userId, enableTools = false, enableThinking = false } = await req.json()
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: "Messages array is required" }, { status: 400 })
@@ -42,6 +42,10 @@ export async function POST(req: NextRequest) {
       model: model || "gpt-oss:120b-cloud",
       messages: messagesWithSystem,
       stream: true,
+    }
+
+    if (enableThinking) {
+      requestBody.think = true
     }
 
     if (isCodingAgent && enableTools) {
@@ -184,6 +188,10 @@ export async function POST(req: NextRequest) {
 
                 if (json.message?.content) {
                   fullAssistantMessage += json.message.content
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(json)}\n\n`))
+                }
+
+                if (json.message?.thinking) {
                   controller.enqueue(encoder.encode(`data: ${JSON.stringify(json)}\n\n`))
                 }
 

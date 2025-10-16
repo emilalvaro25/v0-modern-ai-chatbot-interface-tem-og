@@ -7,10 +7,11 @@ export default function Header({ createNewChat, sidebarCollapsed, setSidebarOpen
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   const ollamaModels = [
-    { name: "gpt-oss:120b-cloud", label: "Emilio-120b", icon: "🚀" },
-    { name: "gpt-oss:20b-cloud", label: "Emilio-flash-20b", icon: "⚡" },
-    { name: "deepseek-v3.1:671b-cloud", label: "Aquilles-V3.1", icon: "🧠" },
-    { name: "qwen3-coder:480b-cloud", label: "Alex-Coder", icon: "💻" },
+    { name: "gpt-oss:120b-cloud", label: "Emilio-120b", icon: "🚀", thinking: false },
+    { name: "gpt-oss:120b-cloud-thinking", label: "Emilio-120b-Thinking", icon: "🧠", thinking: true },
+    { name: "gpt-oss:20b-cloud", label: "Emilio-flash-20b", icon: "⚡", thinking: false },
+    { name: "deepseek-v3.1:671b-cloud", label: "Aquilles-V3.1", icon: "🎯", thinking: false },
+    { name: "qwen3-coder:480b-cloud", label: "Alex-Coder", icon: "💻", thinking: false },
   ]
 
   const currentModel = ollamaModels.find((m) => m.name === selectedModel) || ollamaModels[0]

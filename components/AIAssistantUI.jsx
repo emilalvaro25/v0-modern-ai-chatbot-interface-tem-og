@@ -246,6 +246,12 @@ export default function AIAssistantUI() {
     setFolders((prev) => [...prev, { id: Math.random().toString(36).slice(2), name }])
   }
 
+  useEffect(() => {
+    if (agentMode) {
+      setSelectedModel("qwen3-coder:480b-cloud")
+    }
+  }, [agentMode])
+
   async function sendMessage(convId, content, isAgentMode = false) {
     if (!content.trim()) return
 
@@ -261,7 +267,7 @@ export default function AIAssistantUI() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             prompt: content,
-            model: selectedModel,
+            model: "gpt-oss:20b-cloud",
           }),
         })
 
@@ -309,16 +315,18 @@ export default function AIAssistantUI() {
       }))
 
       const isCodingAgent = selectedModel === "qwen3-coder:480b-cloud"
+      const isThinkingMode = selectedModel === "gpt-oss:120b-cloud-thinking"
 
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages,
-          model: selectedModel,
+          model: isThinkingMode ? "gpt-oss:120b-cloud" : selectedModel,
           conversationId: convId,
           userId,
           enableTools: isCodingAgent,
+          enableThinking: isThinkingMode,
         }),
       })
 
@@ -328,6 +336,7 @@ export default function AIAssistantUI() {
 
       const assistantMsgId = Math.random().toString(36).slice(2)
       let assistantContent = ""
+      let assistantThinking = ""
       let toolExecutions = []
 
       setConversations((prev) =>
@@ -337,6 +346,7 @@ export default function AIAssistantUI() {
             id: assistantMsgId,
             role: "assistant",
             content: "",
+            thinking: "",
             createdAt: new Date().toISOString(),
             toolExecutions: [],
           }
@@ -371,6 +381,20 @@ export default function AIAssistantUI() {
 
               try {
                 const json = JSON.parse(data)
+
+                if (json.message?.thinking) {
+                  assistantThinking += json.message.thinking
+
+                  setConversations((prev) =>
+                    prev.map((c) => {
+                      if (c.id !== convId) return c
+                      const msgs = (c.messages || []).map((m) =>
+                        m.id === assistantMsgId ? { ...m, thinking: assistantThinking } : m,
+                      )
+                      return { ...c, messages: msgs }
+                    }),
+                  )
+                }
 
                 if (json.type === "tool_call") {
                   console.log("[v0] Tool call:", json.tool)
