@@ -9,6 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@deepgram/sdk": "latest",
     "@emotion/is-prop-valid": "latest",
     "@hookform/resolvers": "^3.9.1",
     "@neondatabase/serverless": "latest",

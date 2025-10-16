@@ -1,16 +1,20 @@
 "use client"
 
 import { useRef, useState, forwardRef, useImperativeHandle, useEffect } from "react"
-import { Send, Loader2, Plus, Mic } from "lucide-react"
+import { Send, Loader2, Plus, Mic, MicOff } from "lucide-react"
 import ComposerActionsPopover from "./ComposerActionsPopover"
 import { cls } from "./utils"
+import { AudioRecorder, transcribeAudio } from "../lib/deepgram"
 
 const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgentModeChange }, ref) {
   const [value, setValue] = useState("")
   const [sending, setSending] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
   const [lineCount, setLineCount] = useState(1)
+  const [isRecording, setIsRecording] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
   const inputRef = useRef(null)
+  const recorderRef = useRef(null)
 
   useEffect(() => {
     if (inputRef.current) {
@@ -70,6 +74,54 @@ const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgent
     }
   }
 
+  async function handleVoiceInput() {
+    if (isRecording) {
+      // Stop recording and transcribe
+      try {
+        setIsTranscribing(true)
+        const audioBlob = await recorderRef.current.stopRecording()
+        recorderRef.current = null
+        setIsRecording(false)
+
+        // Send to server for transcription
+        const transcript = await transcribeAudio(audioBlob)
+
+        if (transcript) {
+          setValue((prev) => {
+            const newValue = prev ? `${prev} ${transcript}` : transcript
+            return newValue
+          })
+        }
+      } catch (error) {
+        console.error("[v0] Transcription error:", error)
+        alert("Failed to transcribe audio. Please try again.")
+      } finally {
+        setIsTranscribing(false)
+      }
+    } else {
+      // Start recording
+      try {
+        const recorder = new AudioRecorder()
+        recorderRef.current = recorder
+
+        await recorder.startRecording()
+        setIsRecording(true)
+      } catch (error) {
+        console.error("[v0] Failed to start voice input:", error)
+        alert("Failed to start voice input. Please check microphone permissions.")
+      }
+    }
+  }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recorderRef.current && isRecording) {
+        recorderRef.current.stopRecording().catch(console.error)
+      }
+    }
+  }, [isRecording])
+
   const hasContent = value.length > 0
 
   return (
@@ -104,6 +156,14 @@ const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgent
               }
             }}
           />
+          {isRecording && (
+            <div className="absolute bottom-0 left-0 right-0 text-xs text-red-500 italic animate-pulse">
+              Recording... Click to stop
+            </div>
+          )}
+          {isTranscribing && (
+            <div className="absolute bottom-0 left-0 right-0 text-xs text-blue-500 italic">Transcribing...</div>
+          )}
         </div>
 
         <div className="flex items-center justify-between mt-2">
@@ -134,10 +194,25 @@ const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgent
 
           <div className="flex items-center gap-1 shrink-0">
             <button
-              className="inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 transition-colors"
-              title="Voice input"
+              onClick={handleVoiceInput}
+              disabled={isTranscribing}
+              className={cls(
+                "inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 transition-colors",
+                isRecording
+                  ? "bg-red-500 text-white hover:bg-red-600 animate-pulse"
+                  : isTranscribing
+                    ? "opacity-50 cursor-not-allowed text-zinc-400"
+                    : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-300",
+              )}
+              title={isRecording ? "Stop recording" : isTranscribing ? "Transcribing..." : "Voice input"}
             >
-              <Mic className="h-4 w-4" />
+              {isTranscribing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isRecording ? (
+                <MicOff className="h-4 w-4" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
             </button>
             <button
               onClick={handleSend}

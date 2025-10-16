@@ -8,13 +8,19 @@ export default function Header({ createNewChat, sidebarCollapsed, setSidebarOpen
 
   const ollamaModels = [
     { name: "gpt-oss:120b-cloud", label: "Emilio-120b", icon: "🚀", thinking: false },
-    { name: "gpt-oss:120b-cloud-thinking", label: "Emilio-120b-Thinking", icon: "🧠", thinking: true },
+    { name: "gpt-oss:120b-cloud", label: "Emilio-120b-Thinking", icon: "🧠", thinking: true },
     { name: "gpt-oss:20b-cloud", label: "Emilio-flash-20b", icon: "⚡", thinking: false },
     { name: "deepseek-v3.1:671b-cloud", label: "Aquilles-V3.1", icon: "🎯", thinking: false },
     { name: "qwen3-coder:480b-cloud", label: "Alex-Coder", icon: "💻", thinking: false },
   ]
 
-  const currentModel = ollamaModels.find((m) => m.name === selectedModel) || ollamaModels[0]
+  const currentModel =
+    ollamaModels.find((m) => {
+      if (typeof selectedModel === "string") {
+        return m.name === selectedModel && !m.thinking
+      }
+      return m.name === selectedModel.model && m.thinking === selectedModel.thinking
+    }) || ollamaModels[0]
 
   return (
     <div className="sticky top-0 z-30 flex items-center gap-2 border-b border-zinc-200/60 bg-white/80 px-3 sm:px-4 py-2.5 sm:py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/70">
@@ -40,20 +46,28 @@ export default function Header({ createNewChat, sidebarCollapsed, setSidebarOpen
 
         {isDropdownOpen && (
           <div className="absolute top-full left-0 mt-1 w-48 sm:w-56 rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950 z-50">
-            {ollamaModels.map((model) => (
-              <button
-                key={model.name}
-                onClick={() => {
-                  onModelChange?.(model.name)
-                  setIsDropdownOpen(false)
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-xs sm:text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 first:rounded-t-lg last:rounded-b-lg"
-              >
-                <span className="text-xs sm:text-sm">{model.icon}</span>
-                <span className="flex-1">{model.label}</span>
-                {selectedModel === model.name && <span className="text-xs text-zinc-500">✓</span>}
-              </button>
-            ))}
+            {ollamaModels.map((model, idx) => {
+              const modelKey = `${model.name}-${model.thinking ? "thinking" : "normal"}`
+              const isSelected =
+                typeof selectedModel === "string"
+                  ? selectedModel === model.name && !model.thinking
+                  : selectedModel.model === model.name && selectedModel.thinking === model.thinking
+
+              return (
+                <button
+                  key={modelKey}
+                  onClick={() => {
+                    onModelChange?.(model.thinking ? { model: model.name, thinking: true } : model.name)
+                    setIsDropdownOpen(false)
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs sm:text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 first:rounded-t-lg last:rounded-b-lg"
+                >
+                  <span className="text-xs sm:text-sm">{model.icon}</span>
+                  <span className="flex-1">{model.label}</span>
+                  {isSelected && <span className="text-xs text-zinc-500">✓</span>}
+                </button>
+              )
+            })}
           </div>
         )}
       </div>

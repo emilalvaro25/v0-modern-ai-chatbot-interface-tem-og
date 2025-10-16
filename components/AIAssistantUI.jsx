@@ -314,19 +314,24 @@ export default function AIAssistantUI() {
         content: m.content,
       }))
 
-      const isCodingAgent = selectedModel === "qwen3-coder:480b-cloud"
-      const isThinkingMode = selectedModel === "gpt-oss:120b-cloud-thinking"
+      const isCodingAgent =
+        typeof selectedModel === "string"
+          ? selectedModel === "qwen3-coder:480b-cloud"
+          : selectedModel.model === "qwen3-coder:480b-cloud"
+
+      const isThinkingMode = typeof selectedModel === "object" && selectedModel.thinking === true
+      const actualModel = typeof selectedModel === "string" ? selectedModel : selectedModel.model
 
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages,
-          model: isThinkingMode ? "gpt-oss:120b-cloud" : selectedModel,
+          model: actualModel, // Always use the actual Ollama model name
           conversationId: convId,
           userId,
           enableTools: isCodingAgent,
-          enableThinking: isThinkingMode,
+          enableThinking: isThinkingMode, // Pass thinking as separate flag
         }),
       })
 
