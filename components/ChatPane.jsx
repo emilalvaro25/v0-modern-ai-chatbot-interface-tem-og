@@ -87,46 +87,143 @@ const ChatPane = forwardRef(function ChatPane(
     [],
   )
 
-  const isCodingAgent = selectedModel === "qwen3-coder:480b-cloud"
-  const isThinkingMode = selectedModel === "gpt-oss:120b-cloud-thinking"
+  const actualModel = typeof selectedModel === "string" ? selectedModel : selectedModel?.model || "gpt-oss:120b-cloud"
+  const isThinkingMode = typeof selectedModel === "object" && selectedModel?.thinking === true
+
+  const isCodingAgent = actualModel === "qwen3-coder:480b-cloud"
+  const isDeepSeek = actualModel === "deepseek-v3.1:671b-cloud"
+  const is20b = actualModel === "gpt-oss:20b-cloud"
+
+  const modelPresets = {
+    "qwen3-coder:480b-cloud": [
+      {
+        title: "Build Web App",
+        description: "Create a full-stack application",
+        prompt:
+          "Help me build a modern web application with React and Node.js. I need a complete setup with best practices.",
+      },
+      {
+        title: "Debug Code",
+        description: "Find and fix code issues",
+        prompt: "Help me debug this code and identify potential issues. Provide detailed explanations and solutions.",
+      },
+      {
+        title: "Code Review",
+        description: "Review code quality",
+        prompt:
+          "Please review my code for best practices, performance, security, and maintainability. Suggest improvements.",
+      },
+      {
+        title: "Optimize Performance",
+        description: "Improve code efficiency",
+        prompt: "Help me optimize this code for better performance. Identify bottlenecks and suggest improvements.",
+      },
+      {
+        title: "Write Tests",
+        description: "Create unit and integration tests",
+        prompt:
+          "Help me write comprehensive tests for my code including unit tests, integration tests, and edge cases.",
+      },
+      {
+        title: "Refactor Code",
+        description: "Improve code structure",
+        prompt: "Help me refactor this code to be more maintainable, readable, and follow SOLID principles.",
+      },
+    ],
+    "deepseek-v3.1:671b-cloud": [
+      {
+        title: "Deep Research",
+        description: "Comprehensive topic analysis",
+        prompt: "Conduct a deep research on this topic with multiple perspectives, sources, and detailed analysis.",
+      },
+      {
+        title: "Compare Solutions",
+        description: "Analyze multiple approaches",
+        prompt:
+          "Compare different solutions to this problem. Analyze pros, cons, trade-offs, and recommend the best approach.",
+      },
+      {
+        title: "Technical Analysis",
+        description: "In-depth technical review",
+        prompt:
+          "Provide a detailed technical analysis including architecture, scalability, security, and best practices.",
+      },
+      {
+        title: "Strategic Planning",
+        description: "Long-term strategy development",
+        prompt: "Help me develop a strategic plan with goals, milestones, risks, and success metrics.",
+      },
+    ],
+    "gpt-oss:20b-cloud": [
+      {
+        title: "Quick Summary",
+        description: "Summarize content quickly",
+        prompt: "Provide a concise summary of this content with key points and main takeaways.",
+      },
+      {
+        title: "Brainstorm Ideas",
+        description: "Generate creative ideas",
+        prompt:
+          "Help me brainstorm creative ideas for this project. Think outside the box and suggest innovative approaches.",
+      },
+      {
+        title: "Quick Answer",
+        description: "Fast, direct responses",
+        prompt: "Give me a quick, direct answer to this question with essential information only.",
+      },
+      {
+        title: "Simple Explanation",
+        description: "Explain concepts simply",
+        prompt: "Explain this concept in simple terms that anyone can understand. Use analogies and examples.",
+      },
+    ],
+    "gpt-oss:120b-cloud": [
+      {
+        title: "Business Document",
+        description: "Create professional documents",
+        prompt: "Help me create a professional business document with proper formatting and structure.",
+      },
+      {
+        title: "Formal Letter",
+        description: "Draft formal letters",
+        prompt: "Help me write a formal business letter with appropriate tone and structure.",
+      },
+      {
+        title: "Email Draft",
+        description: "Compose professional emails",
+        prompt: "Help me draft a professional email for business communication.",
+      },
+      {
+        title: "Quotation",
+        description: "Generate price quotations",
+        prompt: "Help me create a detailed quotation with itemized pricing and terms.",
+      },
+      {
+        title: "Invoice",
+        description: "Create professional invoices",
+        prompt: "Help me generate a professional invoice with all necessary details.",
+      },
+      {
+        title: "Creative Writing",
+        description: "Write engaging content",
+        prompt: "Help me write creative and engaging content that captures attention and tells a compelling story.",
+      },
+    ],
+  }
+
+  const currentPresets = isThinkingMode
+    ? modelPresets["gpt-oss:120b-cloud"]
+    : modelPresets[actualModel] || modelPresets["gpt-oss:120b-cloud"]
+
   const tags = isCodingAgent
-    ? ["Coding Agent", "Continuous Loop", "Tool-Enabled", "Web Search"]
+    ? ["Coding Agent", "32K Context", "Thinking Mode", "Tool-Enabled"]
     : isThinkingMode
       ? ["Thinking Mode", "Deep Reasoning", "Chain-of-Thought", "Analytical"]
-      : ["Certified", "Personalized", "Experienced", "Helpful"]
-
-  const businessPresets = [
-    {
-      title: "Business Document",
-      description: "Create professional business documents",
-      prompt: "Help me create a professional business document with proper formatting and structure.",
-    },
-    {
-      title: "Formal Letter",
-      description: "Draft formal business letters",
-      prompt: "Help me write a formal business letter with appropriate tone and structure.",
-    },
-    {
-      title: "Email Draft",
-      description: "Compose professional emails",
-      prompt: "Help me draft a professional email for business communication.",
-    },
-    {
-      title: "Quotation",
-      description: "Generate price quotations",
-      prompt: "Help me create a detailed quotation with itemized pricing and terms.",
-    },
-    {
-      title: "Invoice",
-      description: "Create professional invoices",
-      prompt: "Help me generate a professional invoice with all necessary details.",
-    },
-    {
-      title: "Prompt",
-      description: "Craft effective AI prompts",
-      prompt: "Help me create an effective prompt for AI interactions.",
-    },
-  ]
+      : isDeepSeek
+        ? ["Deep Analysis", "Research", "671B Parameters", "Advanced"]
+        : is20b
+          ? ["Fast Response", "20B Parameters", "Efficient", "Quick Tasks"]
+          : ["Certified", "Personalized", "120B Parameters", "Versatile"]
 
   const messages = conversation ? (Array.isArray(conversation.messages) ? conversation.messages : []) : []
   const count = messages.length || conversation?.messageCount || 0
@@ -169,7 +266,7 @@ const ChatPane = forwardRef(function ChatPane(
                   key={t}
                   className={cls(
                     "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] sm:px-3 sm:py-1 sm:text-xs",
-                    isCodingAgent || isThinkingMode
+                    isCodingAgent || isThinkingMode || isDeepSeek
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
                       : "border-zinc-200 text-zinc-700 dark:border-zinc-800 dark:text-zinc-200",
                   )}
@@ -286,7 +383,7 @@ const ChatPane = forwardRef(function ChatPane(
                   key={t}
                   className={cls(
                     "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] sm:px-3 sm:py-1 sm:text-xs",
-                    isCodingAgent || isThinkingMode
+                    isCodingAgent || isThinkingMode || isDeepSeek
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
                       : "border-zinc-200 text-zinc-700 dark:border-zinc-800 dark:text-zinc-200",
                   )}
@@ -297,9 +394,33 @@ const ChatPane = forwardRef(function ChatPane(
             </div>
 
             <div className="w-full max-w-3xl">
-              <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3 px-2">Quick Start Presets</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {businessPresets.map((preset) => (
+              <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3 px-2">
+                Quick Start Presets
+                {isCodingAgent && (
+                  <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">(Coding Tasks)</span>
+                )}
+                {isDeepSeek && (
+                  <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">(Research & Analysis)</span>
+                )}
+                {is20b && <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">(Quick Tasks)</span>}
+              </h3>
+
+              {/* Mobile: Pill buttons */}
+              <div className="flex md:hidden flex-wrap gap-2 justify-center">
+                {currentPresets.map((preset) => (
+                  <button
+                    key={preset.title}
+                    onClick={() => composerRef.current?.insertTemplate(preset.prompt)}
+                    className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-400"
+                  >
+                    {preset.title}
+                  </button>
+                ))}
+              </div>
+
+              {/* Desktop: Card grid */}
+              <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-3">
+                {currentPresets.map((preset) => (
                   <button
                     key={preset.title}
                     onClick={() => composerRef.current?.insertTemplate(preset.prompt)}
