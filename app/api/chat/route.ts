@@ -52,6 +52,13 @@ export async function POST(req: NextRequest) {
       stream: true,
     }
 
+    if (model === "qwen3-coder:480b-cloud") {
+      requestBody.options = {
+        num_ctx: 32768, // 32K context window
+      }
+      requestBody.think = true // Always enable thinking for Alex-Coder
+    }
+
     if (enableThinking) {
       requestBody.think = true
     }

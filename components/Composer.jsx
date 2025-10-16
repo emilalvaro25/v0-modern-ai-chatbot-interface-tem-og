@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState, forwardRef, useImperativeHandle, useEffect } from "react"
-import { Send, Loader2, Plus, Mic, MicOff } from "lucide-react"
+import { Send, Loader2, Plus, Mic, MicOff, Paperclip } from "lucide-react"
 import ComposerActionsPopover from "./ComposerActionsPopover"
 import { cls } from "./utils"
 import { AudioRecorder, transcribeAudio } from "../lib/deepgram"
@@ -13,8 +13,10 @@ const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgent
   const [lineCount, setLineCount] = useState(1)
   const [isRecording, setIsRecording] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
+  const [attachedFiles, setAttachedFiles] = useState([])
   const inputRef = useRef(null)
   const recorderRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     if (inputRef.current) {
@@ -66,8 +68,9 @@ const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgent
     if (!value.trim() || sending) return
     setSending(true)
     try {
-      await onSend?.(value, agentMode)
+      await onSend?.(value, agentMode, attachedFiles)
       setValue("")
+      setAttachedFiles([])
       inputRef.current?.focus()
     } finally {
       setSending(false)
@@ -124,6 +127,19 @@ const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgent
 
   const hasContent = value.length > 0
 
+  const handleFileAttach = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || [])
+    setAttachedFiles((prev) => [...prev, ...files])
+  }
+
+  const removeFile = (index) => {
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== index))
+  }
+
   return (
     <div className="border-t border-zinc-200/60 p-3 sm:p-4 dark:border-zinc-800">
       <div
@@ -132,6 +148,26 @@ const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgent
           "w-full max-w-full sm:max-w-3xl lg:max-w-4xl border-zinc-300 dark:border-zinc-700 p-2 sm:p-3",
         )}
       >
+        {attachedFiles.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-2 pb-2 border-b border-zinc-200 dark:border-zinc-800">
+            {attachedFiles.map((file, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-2 px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs"
+              >
+                <Paperclip className="h-3 w-3" />
+                <span className="max-w-[150px] truncate">{file.name}</span>
+                <button
+                  onClick={() => removeFile(index)}
+                  className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="flex-1 relative">
           <textarea
             ref={inputRef}
@@ -168,7 +204,11 @@ const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgent
 
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-1 sm:gap-2">
-            <ComposerActionsPopover agentMode={agentMode} onAgentModeChange={onAgentModeChange}>
+            <ComposerActionsPopover
+              agentMode={agentMode}
+              onAgentModeChange={onAgentModeChange}
+              onFileAttach={handleFileAttach}
+            >
               <button
                 className="inline-flex shrink-0 items-center justify-center rounded-full p-1.5 sm:p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 transition-colors"
                 title="Add attachment"
@@ -230,6 +270,15 @@ const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgent
             </button>
           </div>
         </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={handleFileChange}
+          accept="image/*,.pdf,.doc,.docx,.txt,.csv,.xlsx,.xls"
+        />
       </div>
 
       <div className="mx-auto mt-2 w-full max-w-full sm:max-w-3xl lg:max-w-4xl px-1 text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400">

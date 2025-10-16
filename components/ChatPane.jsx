@@ -95,6 +95,39 @@ const ChatPane = forwardRef(function ChatPane(
       ? ["Thinking Mode", "Deep Reasoning", "Chain-of-Thought", "Analytical"]
       : ["Certified", "Personalized", "Experienced", "Helpful"]
 
+  const businessPresets = [
+    {
+      title: "Business Document",
+      description: "Create professional business documents",
+      prompt: "Help me create a professional business document with proper formatting and structure.",
+    },
+    {
+      title: "Formal Letter",
+      description: "Draft formal business letters",
+      prompt: "Help me write a formal business letter with appropriate tone and structure.",
+    },
+    {
+      title: "Email Draft",
+      description: "Compose professional emails",
+      prompt: "Help me draft a professional email for business communication.",
+    },
+    {
+      title: "Quotation",
+      description: "Generate price quotations",
+      prompt: "Help me create a detailed quotation with itemized pricing and terms.",
+    },
+    {
+      title: "Invoice",
+      description: "Create professional invoices",
+      prompt: "Help me generate a professional invoice with all necessary details.",
+    },
+    {
+      title: "Prompt",
+      description: "Craft effective AI prompts",
+      prompt: "Help me create an effective prompt for AI interactions.",
+    },
+  ]
+
   const messages = conversation ? (Array.isArray(conversation.messages) ? conversation.messages : []) : []
   const count = messages.length || conversation?.messageCount || 0
 
@@ -241,10 +274,13 @@ const ChatPane = forwardRef(function ChatPane(
               <img src="/logo-light.png" alt="Eburon AI" className="h-12 w-auto dark:hidden" />
               <img src="/logo-dark.png" alt="Eburon AI" className="hidden h-12 w-auto dark:block" />
             </div>
-            <p className="max-w-md text-center text-zinc-600 dark:text-zinc-400">
-              Welcome! Create a new chat or select an existing conversation to get started.
+            <p className="max-w-2xl text-center text-lg sm:text-xl font-medium text-zinc-700 dark:text-zinc-300">
+              Welcome to Eburon AI
             </p>
-            <div className="flex flex-wrap justify-center gap-2">
+            <p className="max-w-md text-center text-sm text-zinc-600 dark:text-zinc-400 italic">
+              The fire reborn, a presence etched in memory forever.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2 mb-6">
               {tags.map((t) => (
                 <span
                   key={t}
@@ -258,6 +294,24 @@ const ChatPane = forwardRef(function ChatPane(
                   {t}
                 </span>
               ))}
+            </div>
+
+            <div className="w-full max-w-3xl">
+              <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3 px-2">Quick Start Presets</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {businessPresets.map((preset) => (
+                  <button
+                    key={preset.title}
+                    onClick={() => composerRef.current?.insertTemplate(preset.prompt)}
+                    className="group flex flex-col items-start gap-2 rounded-xl border border-zinc-200 bg-white p-4 text-left transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30"
+                  >
+                    <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
+                      {preset.title}
+                    </div>
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">{preset.description}</div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
