@@ -1,7 +1,7 @@
 export const API_CONFIG = {
   // Primary endpoint (Cloud API)
   primary: {
-    baseUrl: process.env.OLLAMA_CLOUD_API || "https://ollama.com",
+    baseUrl: process.env.OLLAMA_CLOUD_API || "https://api.ollama.com",
     apiKey: process.env.EMILIOAI_API_KEY || process.env.OLLAMA_API_KEY || "",
   },
   // Fallback endpoint (Self-hosted VPS)
