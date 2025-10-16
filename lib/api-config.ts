@@ -2,7 +2,7 @@ export const API_CONFIG = {
   // Primary endpoint (Cloud API)
   primary: {
     baseUrl: process.env.OLLAMA_CLOUD_API || "https://ollama.com",
-    apiKey: process.env.OLLAMA_API_KEY || "",
+    apiKey: process.env.EMILIOAI_API_KEY || process.env.OLLAMA_API_KEY || "",
   },
   // Fallback endpoint (Self-hosted VPS)
   fallback: {
@@ -11,13 +11,12 @@ export const API_CONFIG = {
   },
 }
 
-// Generic error messages that don't expose technical details
 export const ERROR_MESSAGES = {
-  AI_UNAVAILABLE: "I'm having trouble connecting to the Emilio Server. Please try again.",
-  NETWORK_ERROR: "Unable to connect. Please check your connection and try again.",
-  RATE_LIMIT: "Too many requests. Please wait a moment and try again.",
-  GENERIC: "Something went wrong. Please try again.",
-  TIMEOUT: "Request timed out. Please try again.",
+  AI_UNAVAILABLE: "Please check your EMILIOAI_API_KEY by notifying Master E to check the server",
+  NETWORK_ERROR: "Please check your EMILIOAI_API_KEY by notifying Master E to check the server",
+  RATE_LIMIT: "Please check your EMILIOAI_API_KEY by notifying Master E to check the server",
+  GENERIC: "Please check your EMILIOAI_API_KEY by notifying Master E to check the server",
+  TIMEOUT: "Please check your EMILIOAI_API_KEY by notifying Master E to check the server",
 }
 
 export async function callOllamaAPI(requestBody: any, usePrimary = true): Promise<Response> {
@@ -33,15 +32,16 @@ export async function callOllamaAPI(requestBody: any, usePrimary = true): Promis
   }
 
   console.log("[v0] Attempting connection to Emilio Server...")
-  console.log("[v0] Using endpoint:", usePrimary ? "primary" : "fallback")
+  console.log("[v0] Using endpoint:", usePrimary ? "primary (Ollama Cloud)" : "fallback (Self-hosted)")
   console.log("[v0] URL:", url)
+  console.log("[v0] Has API Key:", !!config.apiKey)
 
   try {
     const response = await fetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify(requestBody),
-      signal: AbortSignal.timeout(30000), // 30 second timeout
+      signal: AbortSignal.timeout(60000), // Increased timeout to 60 seconds for cloud API
     })
 
     console.log("[v0] Response status:", response.status)

@@ -285,7 +285,7 @@ export default function AIAssistantUI() {
         console.error("[v0] Error generating plan:", error)
         setPlanThinking(false)
         setShowPlanModal(false)
-        alert("Failed to generate execution plan. Please try again.")
+        alert("Please check your EMILIOAI_API_KEY by notifying Master E to check the server")
       }
       return
     }
@@ -489,7 +489,7 @@ export default function AIAssistantUI() {
       const errorMsg = {
         id: Math.random().toString(36).slice(2),
         role: "assistant",
-        content: "I'm having trouble connecting to the Emilio Server. Please check your connection and try again.",
+        content: "Please check your EMILIOAI_API_KEY by notifying Master E to check the server",
         createdAt: new Date().toISOString(),
       }
 
