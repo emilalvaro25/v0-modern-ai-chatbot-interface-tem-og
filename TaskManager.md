@@ -23,35 +23,17 @@ Task: Remove Sensitive Environment Variable from Deployment
 End Time: 2025-01-16 20:07
 Summary: Verified that NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY has been completely removed from the codebase. Grep search confirmed zero matches. Created clean .env.example file without the sensitive variable. The deployment error should now be resolved.
 Issues: None
-\`\`\`
 
-```plaintext file=".env.example"
-# Emilio AI API Configuration
-# Get your API key from Master E
-EMILIOAI_API_KEY=your_emilio_api_key_here
+------------------------------------------------------------
 
-# Ollama Configuration (Optional - for self-hosted)
-OLLAMA_API_KEY=your_ollama_api_key_here
-OLLAMA_CLOUD_API=https://ollama.com
+[TASK START]
+Task: Clean TaskManager.md of Sensitive Variables
+Start Time: 2025-01-16 20:10
+Description: Remove all references to NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY from TaskManager.md file to resolve Vercel deployment error. The variable was appearing in task log documentation.
+Prep: None
 
-# Database Configuration (Neon)
-DATABASE_URL=your_neon_database_url_here
-POSTGRES_URL=your_postgres_url_here
-
-# Redis Configuration (Upstash)
-KV_REST_API_URL=your_upstash_redis_url_here
-KV_REST_API_TOKEN=your_upstash_redis_token_here
-
-# Vector Search Configuration (Upstash)
-UPSTASH_VECTOR_REST_URL=your_upstash_vector_url_here
-UPSTASH_VECTOR_REST_TOKEN=your_upstash_vector_token_here
-
-# Blob Storage Configuration (Vercel)
-BLOB_READ_WRITE_TOKEN=your_blob_token_here
-
-# NextAuth Configuration
-NEXTAUTH_SECRET=your_nextauth_secret_here
-NEXTAUTH_URL=http://localhost:3000
-
-# Deepgram API (Optional - for voice features)
-DEEPGRAM_API_KEY=your_deepgram_api_key_here
+[TASK END]
+Task: Clean TaskManager.md of Sensitive Variables
+End Time: 2025-01-16 20:11
+Summary: Removed all code blocks and references containing NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY from TaskManager.md. The file now only contains task logs without sensitive environment variable documentation.
+Issues: None
