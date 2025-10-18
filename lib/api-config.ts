@@ -1,7 +1,39 @@
+// Function to validate and get the base URL
+function validateAndGetBaseUrl(): string {
+  const envUrl = process.env.OLLAMA_CLOUD_API
+  const defaultUrl = "https://ollama.com"
+
+  // If no env var is set, use default
+  if (!envUrl || envUrl.trim() === "") {
+    console.log("[v0] No OLLAMA_CLOUD_API set, using default:", defaultUrl)
+    return defaultUrl
+  }
+
+  // Strict validation: URL must start with http:// or https://
+  const trimmedUrl = envUrl.trim()
+  if (!trimmedUrl.startsWith("http://") && !trimmedUrl.startsWith("https://")) {
+    console.error("[v0] ⚠️ INVALID OLLAMA_CLOUD_API format:", trimmedUrl)
+    console.error("[v0] ⚠️ URL must start with http:// or https://")
+    console.error("[v0] ⚠️ Falling back to default:", defaultUrl)
+    return defaultUrl
+  }
+
+  // Additional validation: ensure it's a valid URL
+  try {
+    new URL(trimmedUrl)
+    console.log("[v0] ✓ Using OLLAMA_CLOUD_API from env:", trimmedUrl)
+    return trimmedUrl
+  } catch (error) {
+    console.error("[v0] ⚠️ Invalid URL format:", trimmedUrl)
+    console.error("[v0] ⚠️ Falling back to default:", defaultUrl)
+    return defaultUrl
+  }
+}
+
 export const API_CONFIG = {
   // Primary endpoint (Cloud API)
   primary: {
-    baseUrl: process.env.OLLAMA_CLOUD_API || "https://ollama.com",
+    baseUrl: validateAndGetBaseUrl(),
     apiKey: process.env.EMILIOAI_API_KEY || process.env.OLLAMA_API_KEY || "",
   },
   // Fallback endpoint (Self-hosted VPS)
@@ -23,6 +55,12 @@ export async function callOllamaAPI(requestBody: any, usePrimary = true): Promis
   const config = usePrimary ? API_CONFIG.primary : API_CONFIG.fallback
   const url = `${config.baseUrl}/api/chat`
 
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    console.error("[v0] ❌ CRITICAL: Invalid URL format:", url)
+    console.error("[v0] ❌ Base URL:", config.baseUrl)
+    throw new Error("Invalid API endpoint URL. Please check your OLLAMA_CLOUD_API environment variable.")
+  }
+
   const headers: HeadersInit = {
     "Content-Type": "application/json",
   }
@@ -31,11 +69,11 @@ export async function callOllamaAPI(requestBody: any, usePrimary = true): Promis
     headers["Authorization"] = `Bearer ${config.apiKey}`
   }
 
-  console.log("[v0] Attempting connection to Emilio Server...")
-  console.log("[v0] Using endpoint:", usePrimary ? "primary (Ollama Cloud)" : "fallback (Self-hosted)")
-  console.log("[v0] Full URL:", url)
-  console.log("[v0] Has API Key:", !!config.apiKey)
-  console.log("[v0] Request model:", requestBody.model)
+  console.log("[v0] 🚀 Attempting connection to Emilio Server...")
+  console.log("[v0] 📡 Endpoint:", usePrimary ? "Ollama Cloud" : "Self-hosted VPS")
+  console.log("[v0] 🌐 Full URL:", url)
+  console.log("[v0] 🔑 Has API Key:", !!config.apiKey)
+  console.log("[v0] 🤖 Model:", requestBody.model)
 
   try {
     const response = await fetch(url, {
