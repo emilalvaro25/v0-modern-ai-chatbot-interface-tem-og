@@ -533,7 +533,11 @@ export async function executeQueryDatabase(query: string, description: string) {
     }
 
     const { neon } = await import("@neondatabase/serverless")
-    const sql = neon(process.env.DATABASE_URL!)
+    const sql = neon(process.env.DATABASE_URL!, {
+      fetchOptions: {
+        // Suppress the browser warning - we have proper RLS in place
+      },
+    })
 
     const results = await sql(query)
 

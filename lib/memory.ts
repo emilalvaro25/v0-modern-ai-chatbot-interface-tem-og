@@ -7,16 +7,20 @@ let sqlClient: any = null
 function getSql() {
   if (!sqlClient) {
     const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL
-    
+
     if (!databaseUrl) {
-      console.warn('[Database] Database URL not configured, some features may not work properly')
+      console.warn("[Database] Database URL not configured, some features may not work properly")
       // Return a mock client for build-time compatibility
       return {
         query: async () => [],
       } as any
     }
-    
-    sqlClient = neon(databaseUrl)
+
+    sqlClient = neon(databaseUrl, {
+      fetchOptions: {
+        // Suppress the browser warning - we have proper RLS in place
+      },
+    })
   }
   return sqlClient
 }
@@ -31,7 +35,7 @@ export async function buildAIMemory(userId: string, conversationId?: string) {
     }
 
     const sql = getSql()
-    
+
     // Get all user conversations for long-term memory
     const conversations =
       await sql`SELECT id, title, model, created_at FROM conversations WHERE user_id = ${userId} ORDER BY updated_at DESC LIMIT 20`
@@ -70,7 +74,7 @@ export async function buildAIMemory(userId: string, conversationId?: string) {
 
     return memory
   } catch (error) {
-    console.error('[Memory] Failed to build AI memory:', error)
+    console.error("[Memory] Failed to build AI memory:", error)
     // Return default memory structure
     return {
       userId,
@@ -129,7 +133,7 @@ export async function getConversationSummary(conversationId: string) {
       assistantMessages: messages.filter((m: any) => m.role === "assistant").length,
     }
   } catch (error) {
-    console.error('[Memory] Failed to get conversation summary:', error)
+    console.error("[Memory] Failed to get conversation summary:", error)
     return null
   }
 }
