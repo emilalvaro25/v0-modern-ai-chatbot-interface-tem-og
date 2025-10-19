@@ -46,7 +46,7 @@ function ThinkingMessage({ onPause, currentStep, progress }) {
             onClick={onPause}
             className="ml-auto inline-flex items-center gap-1 rounded-full border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
           >
-            <Square className="h-3 w-3" /> Pause
+            <Square className="h-3.5 w-3.5" /> Pause
           </button>
         </div>
         {progress && <div className="text-xs text-zinc-400">{progress}</div>}
@@ -218,18 +218,9 @@ const ChatPane = forwardRef(function ChatPane(
   const handlePresetClick = (prompt) => {
     if (composerRef.current) {
       composerRef.current.insertTemplate(prompt)
+      composerRef.current.submitMessage()
     }
   }
-
-  const tags = isCodingAgent
-    ? ["Coding Agent", "32K Context", "Thinking Mode", "Tool-Enabled"]
-    : isThinkingMode
-      ? ["Thinking Mode", "Deep Reasoning", "Chain-of-Thought", "Analytical"]
-      : isDeepSeek
-        ? ["Deep Analysis", "Research", "671B Parameters", "Advanced"]
-        : is20b
-          ? ["Fast Response", "20B Parameters", "Efficient", "Quick Tasks"]
-          : ["Certified", "Personalized", "120B Parameters", "Versatile"]
 
   const messages = conversation ? (Array.isArray(conversation.messages) ? conversation.messages : []) : []
   const count = messages.length || conversation?.messageCount || 0
@@ -266,30 +257,16 @@ const ChatPane = forwardRef(function ChatPane(
               Updated {timeAgo(conversation.updatedAt)} · {count} messages
             </div>
 
-            <div className="mb-6 flex flex-wrap gap-2 border-b border-zinc-200 pb-5 dark:border-zinc-800">
-              {tags.map((t) => (
-                <span
-                  key={t}
-                  className={cls(
-                    "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] sm:px-3 sm:py-1 sm:text-xs",
-                    isCodingAgent || isThinkingMode || isDeepSeek
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
-                      : "border-zinc-200 text-zinc-700 dark:border-zinc-800 dark:text-zinc-200",
-                  )}
-                >
-                  {t}
-                </span>
-              ))}
-            </div>
-
             {messages.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-zinc-300 p-6 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
-                {isCodingAgent
-                  ? "Ready to code! Ask me to build, debug, or optimize anything. I'll work continuously until it's perfect."
-                  : isThinkingMode
-                    ? "Thinking mode enabled. I'll show you my reasoning process before providing answers."
-                    : "No messages yet. Say hello to start."}
-              </div>
+              !busy && (
+                <div className="rounded-xl border border-dashed border-zinc-300 p-6 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+                  {isCodingAgent
+                    ? "Ready to code! Ask me to build, debug, or optimize anything. I'll work continuously until it's perfect."
+                    : isThinkingMode
+                      ? "Thinking mode enabled. I'll show you my reasoning process before providing answers."
+                      : "No messages yet. Say hello to start."}
+                </div>
+              )
             ) : (
               <>
                 {messages.map((m) => (
@@ -324,7 +301,7 @@ const ChatPane = forwardRef(function ChatPane(
                         </div>
                       </div>
                     ) : (
-                      <Message role={m.role} thinking={m.thinking}>
+                      <Message role={m.role} thinking={m.thinking} content={m.content}>
                         <MessageContent content={m.content} />
                         {m.toolExecutions && m.toolExecutions.length > 0 && (
                           <div className="mt-3 space-y-2">
@@ -383,21 +360,6 @@ const ChatPane = forwardRef(function ChatPane(
             <p className="max-w-md text-center text-sm text-zinc-600 dark:text-zinc-400 italic">
               The fire reborn, a presence etched in memory forever.
             </p>
-            <div className="flex flex-wrap justify-center gap-2 mb-6">
-              {tags.map((t) => (
-                <span
-                  key={t}
-                  className={cls(
-                    "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] sm:px-3 sm:py-1 sm:text-xs",
-                    isCodingAgent || isThinkingMode || isDeepSeek
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
-                      : "border-zinc-200 text-zinc-700 dark:border-zinc-800 dark:text-zinc-200",
-                  )}
-                >
-                  {t}
-                </span>
-              ))}
-            </div>
 
             <div className="w-full max-w-3xl">
               <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3 px-2">

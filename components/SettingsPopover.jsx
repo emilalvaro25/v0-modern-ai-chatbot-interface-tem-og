@@ -1,6 +1,19 @@
 "use client"
 import { useState } from "react"
-import { User, Globe, HelpCircle, Info, BookOpen, LogOut, ChevronRight, Wrench, Plug, Server } from "lucide-react"
+import {
+  User,
+  Globe,
+  HelpCircle,
+  Info,
+  BookOpen,
+  LogOut,
+  ChevronRight,
+  Wrench,
+  Plug,
+  Server,
+  Code2,
+  FolderGit2,
+} from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Dialog, DialogContent } from "./ui/dialog"
 import AboutEburonModal from "./AboutEburonModal"
@@ -81,6 +94,30 @@ export default function SettingsPopover({ children }) {
                 <span>{t("Integrations")}</span>
                 <ChevronRight className="h-4 w-4 ml-auto" />
               </button>
+
+              <div className="border-t border-zinc-200 dark:border-zinc-800 my-2" />
+
+              <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-2 mt-3">{t("Deployments")}</div>
+
+              <a
+                href="/manage"
+                className="flex items-center gap-3 w-full p-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
+                onClick={() => setOpen(false)}
+              >
+                <FolderGit2 className="h-4 w-4" />
+                <span>{t("Manage Deployments")}</span>
+                <ChevronRight className="h-4 w-4 ml-auto" />
+              </a>
+
+              <a
+                href="/deployments"
+                className="flex items-center gap-3 w-full p-2 text-sm text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
+                onClick={() => setOpen(false)}
+              >
+                <Code2 className="h-4 w-4" />
+                <span>{t("Browse Deployments")}</span>
+                <ChevronRight className="h-4 w-4 ml-auto" />
+              </a>
 
               <div className="border-t border-zinc-200 dark:border-zinc-800 my-2" />
 

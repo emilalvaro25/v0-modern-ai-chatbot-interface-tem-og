@@ -15,6 +15,9 @@ Eburon AI is an advanced chatbot interface featuring multiple AI models powered 
 - **Emilio-120b** (gpt-oss:120b-cloud) - Large general-purpose model
 - **Emilio-flash-20b** (gpt-oss:20b-cloud) - Fast lightweight model
 - **Aquilles-V3.1** (deepseek-v3.1:671b-cloud) - Advanced reasoning model
+- **Alex-128K** (glm-4.6:cloud) - 200K context window model
+- **Aquiles-Vision** (qwen3-vl:235b-cloud) - Vision-capable model with 125K context
+- **Emilio-Coder** (kimi-k2:1t-cloud) - Advanced coding model with 256K context
 - **Alex-Coder** (qwen3-coder:480b-cloud) - Specialized coding agent
 
 ### 🛠️ Eburon Coding Agent (Alex-Coder)
@@ -41,11 +44,53 @@ The Alex-Coder model features a specialized agentic system inspired by Manus.im:
 - Real-time debugging and testing
 - DevOps and deployment automation
 
+### 🚀 Live Code Execution & Deployment
+
+**Python Sandbox Execution:**
+- Pyodide WebAssembly-based Python runtime
+- Support for NumPy, Pandas, Matplotlib
+- Real-time stdout capture and test case validation
+- Comprehensive error handling
+
+**CLI Tool (@eburon/cli):**
+\`\`\`bash
+# Install globally
+npm install -g @eburon/cli
+
+# Execute code locally
+eburon exec script.py
+
+# Run with file watching
+eburon run app.js --watch
+
+# Test server connection
+eburon test
+
+# Deploy to unique endpoint
+eburon deploy app.js --public --title "My App"
+
+# List your deployments
+eburon list
+\`\`\`
+
+**Deployment System:**
+- Deploy code to unique slug URLs (e.g., `eburon.dev/slug/abc123`)
+- Public/private access control
+- View counting and analytics
+- Language auto-detection
+- Share and embed functionality
+
+**Web Interface:**
+- **Manage Deployments**: `/manage` - Create, edit, delete deployments
+- **Browse Public Deployments**: `/deployments` - Discover public code
+- **View Deployment**: `/slug/{slug}` - Execute and view deployed code
+
 ### 💾 Database Integration
 - **Neon PostgreSQL** for conversation and message persistence
 - Automatic conversation history loading
 - Real-time message synchronization
 - User session management
+- Deployment storage and management
 
 ### 🎨 Modern UI/UX
 - Dark/Light theme support
@@ -58,9 +103,10 @@ The Alex-Coder model features a specialized agentic system inspired by Manus.im:
 ## Tech Stack
 
 - **Frontend**: Next.js 15, React 19, TypeScript
-- **Styling**: Tailwind CSS, shadcn/ui
+- **Styling**: Tailwind CSS v4, shadcn/ui
 - **Database**: Neon PostgreSQL
-- **AI Models**: Ollama Cloud (GPT-OSS, DeepSeek, Qwen3-Coder)
+- **Code Execution**: Pyodide (Python), VM2 (JavaScript)
+- **AI Models**: Ollama Cloud (GPT-OSS, DeepSeek, Qwen3, GLM, Kimi)
 - **Deployment**: Vercel
 
 ## Environment Variables
@@ -85,14 +131,13 @@ UPSTASH_SEARCH_REST_URL=your_upstash_search_url
 UPSTASH_SEARCH_REST_TOKEN=your_upstash_search_token
 
 # Ollama Cloud API
-OLLAMA_API_KEY=your_ollama_api_key
+EMILIOAI_API_KEY=your_ollama_cloud_api_key
+OLLAMA_API_KEY=your_ollama_api_key_fallback
 
 # Authentication (if using NextAuth.js)
 NEXTAUTH_SECRET=your_super_secret_jwt_token_here
 NEXTAUTH_URL=http://localhost:3000
 \`\`\`
-
-Copy `.env.example` to `.env.local` and fill in your actual values.
 
 ## Getting Started
 
@@ -106,15 +151,21 @@ Copy `.env.example` to `.env.local` and fill in your actual values.
    cp .env.example .env.local
    # Fill in your actual environment variable values
    \`\`\`
-4. Build the application:
+4. Run database migrations:
    \`\`\`bash
-   pnpm run build --no-lint
+   psql $DATABASE_URL -f scripts/001_create_conversations_and_messages.sql
+   psql $DATABASE_URL -f scripts/002_fix_user_id_type.sql
+   psql $DATABASE_URL -f scripts/003_create_deployments_table.sql
    \`\`\`
-5. Start the production server:
+5. Build the application:
+   \`\`\`bash
+   pnpm run build
+   \`\`\`
+6. Start the production server:
    \`\`\`bash
    pnpm start
    \`\`\`
-6. Open [http://localhost:3000](http://localhost:3000)
+7. Open [http://localhost:3000](http://localhost:3000)
 
 ### Development Mode
 For development with hot-reloading:
@@ -127,11 +178,14 @@ pnpm run dev
 Run the SQL migration scripts in order:
 
 \`\`\`bash
-# Create tables
+# Create conversations and messages tables
 psql $DATABASE_URL -f scripts/001_create_conversations_and_messages.sql
 
 # Fix user_id type (if needed)
 psql $DATABASE_URL -f scripts/002_fix_user_id_type.sql
+
+# Create deployments table
+psql $DATABASE_URL -f scripts/003_create_deployments_table.sql
 \`\`\`
 
 ## Usage
@@ -156,31 +210,85 @@ psql $DATABASE_URL -f scripts/002_fix_user_id_type.sql
 - "Create a responsive dashboard with charts"
 - "Optimize this SQL query for better performance"
 
+### Code Execution & Deployment
+
+**Using the CLI:**
+\`\`\`bash
+# Execute Python code
+eburon exec script.py
+
+# Deploy to public endpoint
+eburon deploy app.js --public --title "My Calculator App"
+
+# View your deployments
+eburon list
+\`\`\`
+
+**Using the Web Interface:**
+1. Go to `/manage` to create and manage deployments
+2. Browse public deployments at `/deployments`
+3. Share your code at `/slug/{your-slug}`
+
 ## Project Structure
 
 \`\`\`
 ├── app/
 │   ├── api/
-│   │   ├── chat/          # Main chat API with streaming
-│   │   ├── conversations/ # Conversation CRUD
-│   │   ├── messages/      # Message retrieval
-│   │   └── tools/         # Tool execution endpoint
+│   │   ├── chat/              # Main chat API with streaming
+│   │   ├── conversations/     # Conversation CRUD
+│   │   ├── messages/          # Message retrieval
+│   │   ├── deploy/            # Deployment management
+│   │   ├── execute-code/      # Code execution endpoint
+│   │   └── test-connection/   # API connection testing
+│   ├── manage/                # Deployment management dashboard
+│   ├── deployments/           # Public deployments browse
+│   ├── slug/[slug]/           # Dynamic deployment viewer
 │   ├── layout.tsx
 │   └── page.tsx
+├── cli/                       # Eburon CLI tool
+│   ├── commands/              # CLI commands
+│   ├── index.ts               # CLI entry point
+│   └── package.json
 ├── components/
-│   ├── AIAssistantUI.jsx  # Main UI component
-│   ├── ChatPane.jsx       # Chat interface
-│   ├── Composer.jsx       # Message input
-│   ├── Header.jsx         # Top navigation
-│   ├── Sidebar.jsx        # Conversation sidebar
+│   ├── AIAssistantUI.jsx      # Main UI component
+│   ├── ChatPane.jsx           # Chat interface
+│   ├── Composer.jsx           # Message input
+│   ├── Header.jsx             # Top navigation
+│   ├── Sidebar.jsx            # Conversation sidebar
+│   ├── DeploymentViewer.tsx   # Code deployment viewer
+│   ├── DeploymentDashboard.tsx # Deployment management
 │   └── ...
 ├── lib/
-│   ├── system-prompt.ts         # General AI prompt
-│   ├── coding-agent-prompt.ts   # Coding agent prompt
-│   └── tools.ts                 # Tool definitions and handlers
+│   ├── system-prompt.ts       # General AI prompt
+│   ├── coding-agent-prompt.ts # Coding agent prompt
+│   ├── tools.ts               # Tool definitions and handlers
+│   ├── api-config.ts          # API configuration
+│   └── slug-utils.ts          # Slug generation utilities
 └── scripts/
-    └── *.sql              # Database migrations
+    └── *.sql                  # Database migrations
 \`\`\`
+
+## API Endpoints
+
+### Chat & Conversations
+- `POST /api/chat` - Send message and get streaming response
+- `GET /api/conversations` - List all conversations
+- `POST /api/conversations` - Create new conversation
+- `GET /api/messages?conversationId={id}` - Get conversation messages
+
+### Code Execution
+- `POST /api/execute-code` - Execute Python/JavaScript code
+- `POST /api/execute-python` - Execute Python code (legacy)
+
+### Deployments
+- `POST /api/deploy` - Create new deployment
+- `GET /api/deploy` - List all deployments
+- `GET /api/deploy/{slug}` - Get deployment by slug
+- `PUT /api/deploy/{slug}` - Update deployment
+- `DELETE /api/deploy?slug={slug}` - Delete deployment
+
+### Testing
+- `GET /api/test-connection` - Test Ollama Cloud API connection
 
 ## Deployment
 

@@ -1,0 +1,29 @@
+{
+  "name": "@eburon/cli",
+  "version": "1.0.0",
+  "description": "Eburon AI CLI - Execute code, test connections, and deploy to unique endpoints",
+  "main": "dist/index.js",
+  "bin": {
+    "eburon": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch index.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["eburon", "cli", "code-execution", "sandbox", "deployment"],
+  "author": "Eburon AI",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "chokidar": "^3.5.3",
+    "commander": "^11.1.0",
+    "nanoid": "^5.0.4",
+    "ora": "^8.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

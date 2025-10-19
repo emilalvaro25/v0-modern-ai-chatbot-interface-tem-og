@@ -108,10 +108,16 @@ export default function AIAssistantUI() {
   const [pendingConvId, setPendingConvId] = useState(null)
   const [planThinking, setPlanThinking] = useState(false)
 
+  const [isInitialized, setIsInitialized] = useState(false)
+
   useEffect(() => {
-    if (!userId) return
+    setIsInitialized(true)
+  }, [])
+
+  useEffect(() => {
+    if (!userId || !isInitialized) return
     loadConversations()
-  }, [userId])
+  }, [userId, isInitialized])
 
   async function loadConversations() {
     if (!userId) return
@@ -143,9 +149,9 @@ export default function AIAssistantUI() {
   }
 
   useEffect(() => {
-    if (!selectedId) return
+    if (!selectedId || !isInitialized) return
     loadMessages(selectedId)
-  }, [selectedId])
+  }, [selectedId, isInitialized])
 
   async function loadMessages(convId) {
     try {
@@ -204,7 +210,7 @@ export default function AIAssistantUI() {
   }
 
   async function createNewChat() {
-    if (!userId) return
+    if (!userId) return null // Return null if no userId
 
     try {
       const response = await fetch("/api/conversations", {
@@ -236,10 +242,12 @@ export default function AIAssistantUI() {
         if (typeof window !== "undefined" && window.innerWidth < 768) {
           setSidebarOpen(false)
         }
+        return conv.id // Return the conversation ID
       }
     } catch (error) {
       console.error("[v0] Error creating conversation:", error)
     }
+    return null // Return null on error
   }
 
   function createFolder() {
@@ -657,6 +665,17 @@ export default function AIAssistantUI() {
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
+  if (!isInitialized) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+        <div className="text-center">
+          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-zinc-200 border-t-zinc-900 dark:border-zinc-800 dark:border-t-zinc-100 mx-auto"></div>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">Initializing Eburon...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="h-screen w-full bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
       <div className="mx-auto flex h-full w-full">
@@ -704,18 +723,15 @@ export default function AIAssistantUI() {
           <ChatPane
             ref={composerRef}
             conversation={selected}
-            onSend={(content) => {
+            onSend={async (content) => {
+              // Make async to properly handle conversation creation
               if (!selected) {
-                createNewChat().then(() => {
-                  setTimeout(() => {
-                    const newConv = conversations[0]
-                    if (newConv) {
-                      sendMessage(newConv.id, content, agentMode)
-                    }
-                  }, 100)
-                })
+                const newConvId = await createNewChat()
+                if (newConvId) {
+                  await sendMessage(newConvId, content, agentMode)
+                }
               } else {
-                sendMessage(selected.id, content, agentMode)
+                await sendMessage(selected.id, content, agentMode)
               }
             }}
             onEditMessage={(messageId, newContent) => selected && editMessage(selected.id, messageId, newContent)}

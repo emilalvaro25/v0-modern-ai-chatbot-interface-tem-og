@@ -57,11 +57,14 @@ const Composer = forwardRef(function Composer({ onSend, busy, agentMode, onAgent
           return newValue
         })
       },
+      submitMessage: () => {
+        handleSend()
+      },
       focus: () => {
         inputRef.current?.focus()
       },
     }),
-    [],
+    [value, sending], // Add dependencies so handleSend has access to current value
   )
 
   async function handleSend() {

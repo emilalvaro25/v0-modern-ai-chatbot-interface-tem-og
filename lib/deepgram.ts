@@ -1,3 +1,5 @@
+"use client"
+
 // Client-side audio recording utility
 export class AudioRecorder {
   private mediaRecorder: MediaRecorder | null = null
@@ -5,6 +7,10 @@ export class AudioRecorder {
   private isRecording = false
 
   async startRecording() {
+    if (typeof window === "undefined" || typeof navigator === "undefined") {
+      throw new Error("Audio recording is only available in the browser")
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
 
@@ -63,6 +69,10 @@ export class AudioRecorder {
 
 // Send audio to server for transcription
 export async function transcribeAudio(audioBlob: Blob): Promise<string> {
+  if (typeof window === "undefined") {
+    throw new Error("Transcription is only available in the browser")
+  }
+
   const formData = new FormData()
   formData.append("audio", audioBlob)
 
