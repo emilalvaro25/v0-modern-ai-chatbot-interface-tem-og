@@ -67,7 +67,6 @@
     "next-themes": "latest",
     "ora": "latest",
     "path": "latest",
-    "pyodide": "latest",
     "react": "^19",
     "react-day-picker": "9.8.0",
     "react-dom": "^19",

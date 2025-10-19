@@ -14,13 +14,12 @@ export async function POST(req: NextRequest) {
 
     switch (language.toLowerCase()) {
       case "python": {
-        // Forward to Python execution endpoint
-        const pythonResponse = await fetch(new URL("/api/execute-python", req.url).toString(), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code, testCases }),
+        return NextResponse.json({
+          success: false,
+          error:
+            "Python execution is not available in this environment. Please use an external Python execution service.",
+          language: "python",
         })
-        return pythonResponse
       }
 
       case "javascript":
