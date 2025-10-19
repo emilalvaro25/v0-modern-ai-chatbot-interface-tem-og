@@ -1,5 +1,5 @@
 "use client"
-import { CheckCircle2, XCircle, Edit3, Loader2 } from "lucide-react"
+import { XCircle, Loader2, Zap } from "lucide-react"
 
 export default function PlanApprovalModal({ plan, onApprove, onReject, onEdit, isOpen, thinking }) {
   if (!isOpen) return null
@@ -11,18 +11,11 @@ export default function PlanApprovalModal({ plan, onApprove, onReject, onEdit, i
         <div className="flex items-center justify-between p-6 border-b border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
-              <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                />
-              </svg>
+              <Zap className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Agent Execution Plan</h2>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">Review the proposed task breakdown</p>
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Autonomous Agent Execution</h2>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Plan generated - executing automatically...</p>
             </div>
           </div>
         </div>
@@ -39,6 +32,16 @@ export default function PlanApprovalModal({ plan, onApprove, onReject, onEdit, i
             </div>
           ) : (
             <div className="space-y-4">
+              <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                  <Zap className="h-4 w-4" />
+                  <p className="text-sm font-medium">Autonomous Mode Active</p>
+                </div>
+                <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-1">
+                  Plan approved automatically - execution in progress
+                </p>
+              </div>
+
               {/* Thinking Process */}
               {plan?.thinking && (
                 <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
@@ -107,30 +110,21 @@ export default function PlanApprovalModal({ plan, onApprove, onReject, onEdit, i
           )}
         </div>
 
-        {/* Footer Actions */}
         {!thinking && (
-          <div className="flex items-center justify-end gap-3 p-6 border-t border-zinc-200 dark:border-zinc-800">
-            <button
-              onClick={onReject}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
-            >
-              <XCircle className="h-4 w-4" />
-              No, Cancel
-            </button>
-            <button
-              onClick={onEdit}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
-            >
-              <Edit3 className="h-4 w-4" />
-              Other, Edit Plan
-            </button>
-            <button
-              onClick={onApprove}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg hover:from-emerald-600 hover:to-teal-600 transition-colors shadow-sm"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              Yes, Execute
-            </button>
+          <div className="flex items-center justify-between gap-3 p-6 border-t border-zinc-200 dark:border-zinc-800">
+            <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+              <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+              <span>Executing plan autonomously...</span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={onReject}
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+              >
+                <XCircle className="h-3 w-3" />
+                Cancel
+              </button>
+            </div>
           </div>
         )}
       </div>

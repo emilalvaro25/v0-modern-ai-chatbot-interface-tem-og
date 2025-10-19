@@ -270,7 +270,7 @@ export default function AIAssistantUI() {
       setPendingPrompt(content)
       setPendingConvId(convId)
       setPlanThinking(true)
-      setShowPlanModal(true)
+      setShowPlanModal(true) // Show modal as informational only
 
       try {
         const response = await fetch("/api/agent/plan", {
@@ -289,13 +289,31 @@ export default function AIAssistantUI() {
         const data = await response.json()
         setCurrentPlan(data.plan)
         setPlanThinking(false)
+
+        // Close modal after 2 seconds to show the plan briefly
+        setTimeout(() => {
+          setShowPlanModal(false)
+        }, 2000)
+
+        // Execute with the plan context immediately
+        const enhancedPrompt = `${content}\n\n[Agent Plan]\n${JSON.stringify(data.plan, null, 2)}`
+
+        // Reset plan state
+        setCurrentPlan(null)
+        setPendingPrompt(null)
+        setPendingConvId(null)
+
+        // Execute the plan automatically (recursive call with isAgentMode=false)
+        await sendMessage(convId, enhancedPrompt, false)
+
+        return
       } catch (error) {
         console.error("[v0] Error generating plan:", error)
         setPlanThinking(false)
         setShowPlanModal(false)
         alert("Please check your EMILIOAI_API_KEY by notifying Master E to check the server")
+        return
       }
-      return
     }
 
     const now = new Date().toISOString()
@@ -583,7 +601,6 @@ export default function AIAssistantUI() {
   function handlePlanApprove() {
     setShowPlanModal(false)
     if (pendingPrompt && pendingConvId) {
-      // Execute with the plan context
       const enhancedPrompt = `${pendingPrompt}\n\n[Agent Plan]\n${JSON.stringify(currentPlan, null, 2)}`
       sendMessage(pendingConvId, enhancedPrompt, false)
     }
