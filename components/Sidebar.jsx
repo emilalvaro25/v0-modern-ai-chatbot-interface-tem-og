@@ -64,6 +64,10 @@ export default function Sidebar({
     checkMobile()
     window.addEventListener("resize", checkMobile)
     return () => window.removeEventListener("resize", checkMobile)
+  }, [])
+
+  const handleDeleteFolder = (folderName) => {
+    const updatedConversations = conversations.map((conv) =>
       conv.folder === folderName ? { ...conv, folder: null } : conv,
     )
     console.log("Delete folder:", folderName, "Updated conversations:", updatedConversations)
@@ -74,6 +78,15 @@ export default function Sidebar({
       conv.folder === oldName ? { ...conv, folder: newName } : conv,
     )
     console.log("Rename folder:", oldName, "to", newName, "Updated conversations:", updatedConversations)
+  }
+
+  const getConversationsByFolder = (folderName) => {
+    return conversations.filter((conv) => conv.folder === folderName)
+  }
+
+  const handleCreateFolder = (folderName) => {
+    createFolder(folderName)
+    setShowCreateFolderModal(false)
   }
 
   const handleCreateTemplate = (templateData) => {

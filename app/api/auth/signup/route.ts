@@ -1,8 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createUser, logAuditEvent } from "@/lib/auth"
 
-export const runtime = "edge"
-
 export async function POST(req: NextRequest) {
   try {
     const { email, password, name, organization } = await req.json()

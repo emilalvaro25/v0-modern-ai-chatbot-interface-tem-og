@@ -1,8 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getUserByToken } from "@/lib/auth"
 
-export const runtime = "edge"
-
 export async function GET(req: NextRequest) {
   try {
     const token = req.cookies.get("auth_token")?.value
