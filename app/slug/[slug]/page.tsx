@@ -2,6 +2,8 @@ import { notFound } from "next/navigation"
 import { getSql } from "@/lib/database"
 import { DeploymentViewer } from "@/components/DeploymentViewer"
 
+export const dynamic = "force-dynamic"
+
 interface PageProps {
   params: {
     slug: string

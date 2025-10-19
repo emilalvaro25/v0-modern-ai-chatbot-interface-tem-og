@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Eye, Calendar, Code2, ExternalLink } from "lucide-react"
 
+export const dynamic = "force-dynamic"
+
 export const metadata = {
   title: "Public Deployments | Eburon",
   description: "Browse public code deployments on Eburon",
