@@ -30,6 +30,31 @@ function validateAndGetBaseUrl(): string {
   }
 }
 
+// Function to validate API key format
+function validateApiKey(key: string | undefined): { valid: boolean; error?: string } {
+  if (!key || key.trim() === "") {
+    return { valid: false, error: "API key is empty or not set" }
+  }
+
+  const trimmedKey = key.trim()
+
+  // Ollama Cloud API keys should have format: xxxxx.xxxxx (two parts separated by dot)
+  if (!trimmedKey.includes(".")) {
+    return { valid: false, error: "API key format invalid (should contain a dot separator)" }
+  }
+
+  const parts = trimmedKey.split(".")
+  if (parts.length !== 2) {
+    return { valid: false, error: "API key format invalid (should have exactly two parts)" }
+  }
+
+  if (parts[0].length < 8 || parts[1].length < 8) {
+    return { valid: false, error: "API key format invalid (parts too short)" }
+  }
+
+  return { valid: true }
+}
+
 export const API_CONFIG = {
   // Primary endpoint (Cloud API)
   primary: {
@@ -65,14 +90,21 @@ export async function callOllamaAPI(requestBody: any, usePrimary = true): Promis
     "Content-Type": "application/json",
   }
 
-  if (config.apiKey && config.apiKey.trim() !== "") {
+  if (usePrimary) {
+    const keyValidation = validateApiKey(config.apiKey)
+
+    if (!keyValidation.valid) {
+      console.error("[v0] ❌ API Key Validation Failed:", keyValidation.error)
+      console.error("[v0] ❌ EMILIOAI_API_KEY:", process.env.EMILIOAI_API_KEY ? "SET (but invalid)" : "NOT SET")
+      console.error("[v0] ❌ OLLAMA_API_KEY:", process.env.OLLAMA_API_KEY ? "SET (but invalid)" : "NOT SET")
+      console.error("[v0] 💡 Expected format: xxxxxxxx.xxxxxxxx (32+ chars with dot separator)")
+      throw new Error(`API key validation failed: ${keyValidation.error}`)
+    }
+
     headers["Authorization"] = `Bearer ${config.apiKey}`
     const maskedKey = config.apiKey.substring(0, 8) + "..." + config.apiKey.substring(config.apiKey.length - 4)
     console.log("[v0] 🔑 Using API Key (masked):", maskedKey)
-  } else {
-    console.log("[v0] ⚠️ WARNING: No API key found!")
-    console.log("[v0] ⚠️ EMILIOAI_API_KEY:", process.env.EMILIOAI_API_KEY ? "SET" : "NOT SET")
-    console.log("[v0] ⚠️ OLLAMA_API_KEY:", process.env.OLLAMA_API_KEY ? "SET" : "NOT SET")
+    console.log("[v0] ✓ API Key format validated successfully")
   }
 
   console.log("[v0] 🚀 Attempting connection to Emilio Server...")
@@ -88,9 +120,9 @@ export async function callOllamaAPI(requestBody: any, usePrimary = true): Promis
       signal: AbortSignal.timeout(60000),
     })
 
-    console.log("[v0] Response status:", response.status)
-    console.log("[v0] Response ok:", response.ok)
-    console.log("[v0] Response headers:", Object.fromEntries(response.headers.entries()))
+    console.log("[v0] ✓ Response received")
+    console.log("[v0] Status:", response.status, response.statusText)
+    console.log("[v0] Content-Type:", response.headers.get("content-type"))
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "Unable to read error")
@@ -99,32 +131,90 @@ export async function callOllamaAPI(requestBody: any, usePrimary = true): Promis
       console.error("[v0] ❌ Status Text:", response.statusText)
       console.error("[v0] ❌ Body:", errorText)
 
-      // Try to parse as JSON for better error details
       try {
         const errorJson = JSON.parse(errorText)
         console.error("[v0] ❌ Parsed Error:", errorJson)
+
+        // Check for authentication errors
+        if (response.status === 401 || response.status === 403) {
+          console.error("[v0] ❌ AUTHENTICATION FAILED")
+          console.error("[v0] 💡 Your API key is invalid or expired")
+          console.error("[v0] 💡 Please notify Master E to check the EMILIOAI_API_KEY")
+        }
       } catch (e) {
         console.error("[v0] ❌ Error body is not JSON")
       }
 
       if (usePrimary) {
-        console.log("[v0] Primary endpoint failed, trying fallback...")
+        console.log("[v0] ⚠️ Primary endpoint failed, trying fallback VPS...")
         return callOllamaAPI(requestBody, false)
       }
     }
 
     return response
   } catch (error) {
-    console.error("[v0] Network error:", error instanceof Error ? error.message : "Unknown error")
+    console.error("[v0] ❌ Network error:", error instanceof Error ? error.message : "Unknown error")
+
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        console.error("[v0] ❌ Request timeout (60s)")
+      } else if (error.message.includes("fetch")) {
+        console.error("[v0] ❌ Network connection failed")
+      }
+    }
+
     if (usePrimary) {
-      console.log("[v0] Trying fallback after network error...")
+      console.log("[v0] ⚠️ Trying fallback VPS after network error...")
       try {
         return await callOllamaAPI(requestBody, false)
       } catch (fallbackError) {
-        console.error("[v0] Fallback also failed:", fallbackError)
+        console.error("[v0] ❌ Fallback also failed:", fallbackError)
         throw error
       }
     }
     throw error
+  }
+}
+
+export async function testOllamaConnection(): Promise<{ success: boolean; error?: string; endpoint?: string }> {
+  try {
+    console.log("[v0] 🧪 Testing Ollama Cloud connection...")
+
+    const keyValidation = validateApiKey(API_CONFIG.primary.apiKey)
+    if (!keyValidation.valid) {
+      return {
+        success: false,
+        error: `API key validation failed: ${keyValidation.error}`,
+      }
+    }
+
+    const testRequest = {
+      model: "gpt-oss:20b-cloud",
+      messages: [{ role: "user", content: "test" }],
+      stream: false,
+    }
+
+    const response = await callOllamaAPI(testRequest, true)
+
+    if (response.ok) {
+      console.log("[v0] ✓ Connection test successful!")
+      return {
+        success: true,
+        endpoint: API_CONFIG.primary.baseUrl,
+      }
+    } else {
+      const errorText = await response.text().catch(() => "Unknown error")
+      return {
+        success: false,
+        error: `API returned ${response.status}: ${errorText}`,
+        endpoint: API_CONFIG.primary.baseUrl,
+      }
+    }
+  } catch (error) {
+    console.error("[v0] ❌ Connection test failed:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    }
   }
 }
