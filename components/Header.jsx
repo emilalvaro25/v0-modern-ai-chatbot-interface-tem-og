@@ -14,14 +14,14 @@ export default function Header({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   const ollamaModels = [
-    { name: "gpt-oss:120b-cloud", label: "Emilio-120b", icon: "🚀", thinking: false },
-    { name: "gpt-oss:120b-cloud", label: "Emilio-120b-Thinking", icon: "🧠", thinking: true },
-    { name: "gpt-oss:20b-cloud", label: "Emilio-flash-20b", icon: "⚡", thinking: false },
-    { name: "deepseek-v3.1:671b-cloud", label: "Aquilles-V3.1", icon: "🎯", thinking: false },
-    { name: "qwen3-coder:480b-cloud", label: "Alex-Coder", icon: "💻", thinking: true, context: "32K" },
-    { name: "glm-4.6:cloud", label: "Alex-128K", icon: "🤖", thinking: true, context: "200K" },
-    { name: "qwen3-vl:235b-cloud", label: "Aquiles-Vision", icon: "👁️", thinking: false, context: "125K", vision: true },
-    { name: "kimi-k2:1t-cloud", label: "Emilio-Coder", icon: "🔧", thinking: true, context: "256K" },
+    { name: "gpt-oss:120b-cloud", label: "Eburon-120b", icon: "🚀", thinking: false },
+    { name: "gpt-oss:120b-cloud", label: "Eburon-120b-Thinking", icon: "🧠", thinking: true },
+    { name: "gpt-oss:20b-cloud", label: "Eburon-flash-20b", icon: "⚡", thinking: false },
+    { name: "deepseek-v3.1:671b-cloud", label: "Eburon-V3.1", icon: "🎯", thinking: false },
+    { name: "qwen3-coder:480b-cloud", label: "Eburon-Coder", icon: "💻", thinking: true, context: "32K" },
+    { name: "glm-4.6:cloud", label: "Eburon-128K", icon: "🤖", thinking: true, context: "200K" },
+    { name: "qwen3-vl:235b-cloud", label: "Eburon-Vision", icon: "👁️", thinking: false, context: "125K", vision: true },
+    { name: "kimi-k2:1t-cloud", label: "Eburon-Ultra", icon: "🔧", thinking: true, context: "256K" },
   ]
 
   const currentModel =

@@ -21,7 +21,7 @@ import CreateTemplateModal from "./CreateTemplateModal"
 import SearchModal from "./SearchModal"
 import SettingsPopover from "./SettingsPopover"
 import { cls } from "./utils"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function Sidebar({
   open,
@@ -53,14 +53,18 @@ export default function Sidebar({
   const [showCreateTemplateModal, setShowCreateTemplateModal] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState(null)
   const [showSearchModal, setShowSearchModal] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
-  const getConversationsByFolder = (folderName) => {
-    return conversations.filter((conv) => conv.folder === folderName)
-  }
-
-  const handleCreateFolder = (folderName) => {
-    createFolder(folderName)
-  }
+  useEffect(() => {
+    setMounted(true)
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
 
   const handleDeleteFolder = (folderName) => {
     const updatedConversations = conversations.map((conv) =>
@@ -74,6 +78,15 @@ export default function Sidebar({
       conv.folder === oldName ? { ...conv, folder: newName } : conv,
     )
     console.log("Rename folder:", oldName, "to", newName, "Updated conversations:", updatedConversations)
+  }
+
+  const getConversationsByFolder = (folderName) => {
+    return conversations.filter((conv) => conv.folder === folderName)
+  }
+
+  const handleCreateFolder = (folderName) => {
+    createFolder(folderName)
+    setShowCreateFolderModal(false)
   }
 
   const handleCreateTemplate = (templateData) => {
