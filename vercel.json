@@ -1,6 +1,5 @@
 {
-  "buildCommand": "DATABASE_URL=postgresql://fake:fake@fake:5432/fake UPSTASH_REDIS_REST_URL=https://fake.upstash.io UPSTASH_REDIS_REST_TOKEN=fake UPSTASH_VECTOR_REST_URL=https://fake.upstash.io UPSTASH_VECTOR_REST_TOKEN=fake npm install --legacy-peer-deps && npm run build",
-  "installCommand": "npm install --legacy-peer-deps",
+  "buildCommand": "pnpm run build",
   "framework": "nextjs",
   "regions": ["iad1"],
   "functions": {
