@@ -67,12 +67,17 @@ export async function callOllamaAPI(requestBody: any, usePrimary = true): Promis
 
   if (config.apiKey && config.apiKey.trim() !== "") {
     headers["Authorization"] = `Bearer ${config.apiKey}`
+    const maskedKey = config.apiKey.substring(0, 8) + "..." + config.apiKey.substring(config.apiKey.length - 4)
+    console.log("[v0] 🔑 Using API Key (masked):", maskedKey)
+  } else {
+    console.log("[v0] ⚠️ WARNING: No API key found!")
+    console.log("[v0] ⚠️ EMILIOAI_API_KEY:", process.env.EMILIOAI_API_KEY ? "SET" : "NOT SET")
+    console.log("[v0] ⚠️ OLLAMA_API_KEY:", process.env.OLLAMA_API_KEY ? "SET" : "NOT SET")
   }
 
   console.log("[v0] 🚀 Attempting connection to Emilio Server...")
   console.log("[v0] 📡 Endpoint:", usePrimary ? "Ollama Cloud" : "Self-hosted VPS")
   console.log("[v0] 🌐 Full URL:", url)
-  console.log("[v0] 🔑 Has API Key:", !!config.apiKey)
   console.log("[v0] 🤖 Model:", requestBody.model)
 
   try {
@@ -89,7 +94,18 @@ export async function callOllamaAPI(requestBody: any, usePrimary = true): Promis
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "Unable to read error")
-      console.error("[v0] Error response body:", errorText)
+      console.error("[v0] ❌ API Error Response:")
+      console.error("[v0] ❌ Status:", response.status)
+      console.error("[v0] ❌ Status Text:", response.statusText)
+      console.error("[v0] ❌ Body:", errorText)
+
+      // Try to parse as JSON for better error details
+      try {
+        const errorJson = JSON.parse(errorText)
+        console.error("[v0] ❌ Parsed Error:", errorJson)
+      } catch (e) {
+        console.error("[v0] ❌ Error body is not JSON")
+      }
 
       if (usePrimary) {
         console.log("[v0] Primary endpoint failed, trying fallback...")
