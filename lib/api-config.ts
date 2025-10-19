@@ -59,7 +59,7 @@ export const API_CONFIG = {
   // Primary endpoint (Cloud API)
   primary: {
     baseUrl: validateAndGetBaseUrl(),
-    apiKey: process.env.EMILIOAI_API_KEY || process.env.OLLAMA_API_KEY || "",
+    apiKey: process.env.EBURON_API_KEY || process.env.EMILIOAI_API_KEY || process.env.OLLAMA_API_KEY || "",
   },
   // Fallback endpoint (Self-hosted VPS)
   fallback: {
@@ -107,10 +107,9 @@ export async function callOllamaAPI(requestBody: any, usePrimary = true): Promis
     console.log("[v0] ✓ API Key format validated successfully")
   }
 
-  console.log("[v0] 🚀 Attempting connection to Emilio Server...")
-  console.log("[v0] 📡 Endpoint:", usePrimary ? "Ollama Cloud" : "Self-hosted VPS")
-  console.log("[v0] 🌐 Full URL:", url)
-  console.log("[v0] 🤖 Model:", requestBody.model)
+  console.log("[Emilio AI] 🚀 Connecting to Emilio Server...")
+  console.log("[Emilio AI] 📡 Endpoint:", usePrimary ? "Emilio Cloud" : "Emilio VPS")
+  console.log("[Emilio AI] 🤖 Model:", requestBody.model)
 
   try {
     const response = await fetch(url, {
@@ -120,9 +119,7 @@ export async function callOllamaAPI(requestBody: any, usePrimary = true): Promis
       signal: AbortSignal.timeout(60000),
     })
 
-    console.log("[v0] ✓ Response received")
-    console.log("[v0] Status:", response.status, response.statusText)
-    console.log("[v0] Content-Type:", response.headers.get("content-type"))
+    console.log("[Emilio AI] ✓ Response received")
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "Unable to read error")

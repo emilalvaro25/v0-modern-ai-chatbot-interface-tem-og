@@ -204,7 +204,7 @@ export default function AIAssistantUI() {
   }
 
   async function createNewChat() {
-    if (!userId) return
+    if (!userId) return null
 
     try {
       const response = await fetch("/api/conversations", {
@@ -236,10 +236,12 @@ export default function AIAssistantUI() {
         if (typeof window !== "undefined" && window.innerWidth < 768) {
           setSidebarOpen(false)
         }
+        return item
       }
     } catch (error) {
       console.error("[v0] Error creating conversation:", error)
     }
+    return null
   }
 
   function createFolder() {
@@ -704,16 +706,12 @@ export default function AIAssistantUI() {
           <ChatPane
             ref={composerRef}
             conversation={selected}
-            onSend={(content) => {
+            onSend={async (content) => {
               if (!selected) {
-                createNewChat().then(() => {
-                  setTimeout(() => {
-                    const newConv = conversations[0]
-                    if (newConv) {
-                      sendMessage(newConv.id, content, agentMode)
-                    }
-                  }, 100)
-                })
+                const newConv = await createNewChat()
+                if (newConv) {
+                  sendMessage(newConv.id, content, agentMode)
+                }
               } else {
                 sendMessage(selected.id, content, agentMode)
               }

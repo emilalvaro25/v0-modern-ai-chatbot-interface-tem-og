@@ -21,7 +21,7 @@ import CreateTemplateModal from "./CreateTemplateModal"
 import SearchModal from "./SearchModal"
 import SettingsPopover from "./SettingsPopover"
 import { cls } from "./utils"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function Sidebar({
   open,
@@ -53,17 +53,17 @@ export default function Sidebar({
   const [showCreateTemplateModal, setShowCreateTemplateModal] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState(null)
   const [showSearchModal, setShowSearchModal] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
-  const getConversationsByFolder = (folderName) => {
-    return conversations.filter((conv) => conv.folder === folderName)
-  }
-
-  const handleCreateFolder = (folderName) => {
-    createFolder(folderName)
-  }
-
-  const handleDeleteFolder = (folderName) => {
-    const updatedConversations = conversations.map((conv) =>
+  useEffect(() => {
+    setMounted(true)
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
       conv.folder === folderName ? { ...conv, folder: null } : conv,
     )
     console.log("Delete folder:", folderName, "Updated conversations:", updatedConversations)
