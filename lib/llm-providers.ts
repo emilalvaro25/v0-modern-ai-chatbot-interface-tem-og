@@ -229,3 +229,17 @@ export const LLM_PROVIDERS: LLMProvider[] = [
     ],
   },
 ]
+
+export function createOllamaCloud() {
+  const apiKey = process.env.OLLAMA_CLOUD_API || process.env.EMILIOAI_API_KEY
+  const baseURL = process.env.OLLAMA_API_ENDPOINT || "https://ollama.emilioai.com"
+
+  return (modelName: string) => {
+    return {
+      provider: "ollama",
+      modelId: modelName,
+      apiKey,
+      baseURL,
+    }
+  }
+}
