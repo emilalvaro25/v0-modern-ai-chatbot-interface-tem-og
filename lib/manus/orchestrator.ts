@@ -4,6 +4,7 @@
  */
 
 import { streamText } from "ai"
+import { createOllama } from "ollama-ai-provider"
 import { createOllamaCloud } from "../llm-providers"
 import { type ManusPolicy, DEFAULT_POLICY } from "./policy"
 import { ModelTelemetry, type SwapReason } from "./telemetry"
@@ -39,12 +40,12 @@ export async function* runManusLoop(task: string, policy: ManusPolicy = DEFAULT_
 
   // Phase 4: Classify the task
   const classification = classifyTask(task)
-  yield `[MANUS] Task classified: ${classification.tags.join(", ")} (${classification.complexity})\n`
-  yield `[MANUS] Estimated tokens: ${classification.estimatedTokens}\n\n`
+  yield `[EBURON] Task classified: ${classification.tags.join(", ")} (${classification.complexity})\n`
+  yield `[EBURON] Estimated tokens: ${classification.estimatedTokens}\n\n`
 
   // Phase 5: Initial model selection
   const currentModel = selectModel(classification.tags, classification.estimatedTokens, policy, telemetry)
-  yield `[MANUS] Selected initial model: ${currentModel.name}\n\n`
+  yield `[EBURON] Selected initial model: ${currentModel.displayName}\n\n`
 
   const session: ManusSession = {
     sessionId,
@@ -58,10 +59,10 @@ export async function* runManusLoop(task: string, policy: ManusPolicy = DEFAULT_
   }
 
   // Phase 6: Planner turn
-  yield `[MANUS] === PLANNER TURN ===\n`
+  yield `[EBURON] === PLANNER TURN ===\n`
   const plan = await executePlanner(session)
   session.plan = plan
-  yield `[MANUS] Plan created with ${plan.steps.length} steps\n`
+  yield `[EBURON] Plan created with ${plan.steps.length} steps\n`
   for (const step of plan.steps) {
     yield `  - ${step.id}: ${step.description}\n`
   }
@@ -72,14 +73,14 @@ export async function* runManusLoop(task: string, policy: ManusPolicy = DEFAULT_
     session.iterations++
     const step = plan.steps[session.currentStep]
 
-    yield `[MANUS] === ITERATION ${session.iterations} - STEP ${session.currentStep + 1}/${plan.steps.length} ===\n`
-    yield `[MANUS] Executing: ${step.description}\n\n`
+    yield `[EBURON] === ITERATION ${session.iterations} - STEP ${session.currentStep + 1}/${plan.steps.length} ===\n`
+    yield `[EBURON] Executing: ${step.description}\n\n`
 
     // Check for model swap before execution
     const swapDecision = shouldSwapModel(session, step)
     if (swapDecision) {
-      yield `[MANUS] 🔄 Swapping model: ${swapDecision.reason}\n`
-      yield `[MANUS] From: ${session.currentModel.name} → To: ${swapDecision.to}\n\n`
+      yield `[EBURON] 🔄 Swapping model: ${swapDecision.reason}\n`
+      yield `[EBURON] From: ${session.currentModel.displayName} → To: ${swapDecision.to}\n\n`
 
       const newModel = selectModel(step.tags, classification.estimatedTokens, policy, telemetry)
       session.currentModel = newModel
@@ -102,33 +103,33 @@ export async function* runManusLoop(task: string, policy: ManusPolicy = DEFAULT_
     }
 
     // Doer turn
-    yield `[MANUS] Doer (${session.currentModel.name})...\n`
+    yield `[EBURON] Doer (${session.currentModel.displayName})...\n`
     const doerOutput = await executeDoer(session, step)
-    yield `[MANUS] ✓ ${doerOutput.changeSummary}\n`
-    yield `[MANUS] Files changed: ${doerOutput.diagnostics.filesChanged}\n\n`
+    yield `[EBURON] ✓ ${doerOutput.changeSummary}\n`
+    yield `[EBURON] Files changed: ${doerOutput.diagnostics.filesChanged}\n\n`
 
     // Reviewer turn
-    yield `[MANUS] Reviewer...\n`
+    yield `[EBURON] Reviewer...\n`
     const reviewerOutput = await executeReviewer(session, step, doerOutput)
-    yield `[MANUS] Verdict: ${reviewerOutput.verdict.toUpperCase()}\n`
+    yield `[EBURON] Verdict: ${reviewerOutput.verdict.toUpperCase()}\n`
 
     if (reviewerOutput.flags.length > 0) {
-      yield `[MANUS] Flags: ${reviewerOutput.flags.join(", ")}\n`
+      yield `[EBURON] Flags: ${reviewerOutput.flags.join(", ")}\n`
     }
 
     if (reviewerOutput.advice) {
-      yield `[MANUS] Advice: ${reviewerOutput.advice}\n`
+      yield `[EBURON] Advice: ${reviewerOutput.advice}\n`
     }
 
     yield `\n`
 
     // Phase 8: Stop conditions
     if (reviewerOutput.verdict === "pass" && reviewerOutput.progressChars >= policy.minDeltaChars) {
-      yield `[MANUS] ✅ Step completed successfully with meaningful progress\n`
+      yield `[EBURON] ✅ Step completed successfully with meaningful progress\n`
       session.currentStep++
 
       if (session.currentStep >= plan.steps.length) {
-        yield `[MANUS] 🎉 All steps completed!\n`
+        yield `[EBURON] 🎉 All steps completed!\n`
         break
       }
     } else {
@@ -139,19 +140,19 @@ export async function* runManusLoop(task: string, policy: ManusPolicy = DEFAULT_
       const needsEscalation = reviewerOutput.flags.some((flag) => policy.reviewerFlagsForEscalation.includes(flag))
 
       if (needsEscalation) {
-        yield `[MANUS] ⚠️ Critical flags detected, escalating...\n`
+        yield `[EBURON] ⚠️ Critical flags detected, escalating...\n`
         // Force reselection with higher quality bias
         const escalatedPolicy = { ...policy }
         escalatedPolicy.biasPreference.quality = 1.0
         session.currentModel = selectModel(step.tags, classification.estimatedTokens, escalatedPolicy, telemetry)
-        yield `[MANUS] Escalated to: ${session.currentModel.name}\n\n`
+        yield `[EBURON] Escalated to: ${session.currentModel.displayName}\n\n`
       }
     }
   }
 
   // Final summary
   const summary = telemetry.getSessionSummary(sessionId)
-  yield `\n[MANUS] === SESSION SUMMARY ===\n`
+  yield `\n[EBURON] === SESSION SUMMARY ===\n`
   yield `Total turns: ${summary.totalTurns}\n`
   yield `Model swaps: ${summary.totalSwaps}\n`
   yield `Average latency: ${summary.averageLatency.toFixed(0)}ms\n`
@@ -163,10 +164,16 @@ async function executePlanner(session: ManusSession): Promise<PlannerOutput> {
 
   try {
     const prompt = PLANNER_PROMPT.replace("{{TASK}}", session.task)
-    const ollama = createOllamaCloud()
+
+    const providerConfig = createOllamaCloud()(session.currentModel.name)
+    const ollama = createOllama({
+      baseURL: providerConfig.baseURL,
+      headers: providerConfig.apiKey ? { Authorization: `Bearer ${providerConfig.apiKey}` } : undefined,
+    })
+    const model = ollama(providerConfig.modelId)
 
     const { textStream } = await streamText({
-      model: ollama(session.currentModel.name),
+      model,
       prompt,
       temperature: 0.3,
     })
@@ -224,10 +231,15 @@ async function executeDoer(session: ManusSession, step: PlanStep): Promise<DoerO
       session.workingContext,
     )
 
-    const ollama = createOllamaCloud()
+    const providerConfig = createOllamaCloud()(session.currentModel.name)
+    const ollama = createOllama({
+      baseURL: providerConfig.baseURL,
+      headers: providerConfig.apiKey ? { Authorization: `Bearer ${providerConfig.apiKey}` } : undefined,
+    })
+    const model = ollama(providerConfig.modelId)
 
     const { textStream } = await streamText({
-      model: ollama(session.currentModel.name),
+      model,
       prompt,
       temperature: 0.1,
     })
@@ -285,10 +297,15 @@ async function executeReviewer(session: ManusSession, step: PlanStep, doerOutput
       JSON.stringify(doerOutput, null, 2),
     )
 
-    const ollama = createOllamaCloud()
+    const providerConfig = createOllamaCloud()(session.currentModel.name)
+    const ollama = createOllama({
+      baseURL: providerConfig.baseURL,
+      headers: providerConfig.apiKey ? { Authorization: `Bearer ${providerConfig.apiKey}` } : undefined,
+    })
+    const model = ollama(providerConfig.modelId)
 
     const { textStream } = await streamText({
-      model: ollama(session.currentModel.name),
+      model,
       prompt,
       temperature: 0.2,
     })

@@ -1,10 +1,11 @@
 /**
- * Model Registry - Source of truth for available Ollama Cloud models
+ * Eburon Model Registry - Source of truth for available Ollama Cloud models
  * Each model has capabilities, limits, and declared biases
  */
 
 export interface ModelCapabilities {
   name: string
+  displayName: string // Added display name for UI branding
   tags: ModelTag[]
   maxContextTokens: number
   declaredBias: {
@@ -19,30 +20,35 @@ export type ModelTag = "code" | "planning" | "long_context" | "fast" | "general"
 export const MODEL_REGISTRY: ModelCapabilities[] = [
   {
     name: "qwen2.5-coder:32b",
+    displayName: "Eburon Coder 32B",
     tags: ["code", "reasoning", "general"],
     maxContextTokens: 32768,
     declaredBias: { quality: 0.9, latency: 0.5, cost: 0.6 },
   },
   {
     name: "qwen2.5:32b",
+    displayName: "Eburon Planner 32B",
     tags: ["general", "reasoning", "planning"],
     maxContextTokens: 32768,
     declaredBias: { quality: 0.85, latency: 0.6, cost: 0.7 },
   },
   {
     name: "llama3.1:8b",
+    displayName: "Eburon Fast 8B",
     tags: ["fast", "general", "code"],
     maxContextTokens: 8192,
     declaredBias: { quality: 0.7, latency: 0.9, cost: 0.9 },
   },
   {
     name: "deepseek-coder-v2:16b",
+    displayName: "Eburon Code 16B",
     tags: ["code", "fast"],
     maxContextTokens: 16384,
     declaredBias: { quality: 0.8, latency: 0.7, cost: 0.8 },
   },
   {
     name: "qwen2.5:72b",
+    displayName: "Eburon Reviewer 72B",
     tags: ["reasoning", "planning", "review", "long_context"],
     maxContextTokens: 131072,
     declaredBias: { quality: 0.95, latency: 0.3, cost: 0.4 },
