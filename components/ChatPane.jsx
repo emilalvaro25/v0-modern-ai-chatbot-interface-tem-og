@@ -5,7 +5,7 @@ import { Pencil, RefreshCw, Check, X, Square, Loader2, Search, Code, FileText, C
 import Message from "./Message"
 import Composer from "./Composer"
 import { MessageContent } from "./MessageContent"
-import { cls, timeAgo } from "./utils"
+import { cls } from "./utils"
 
 function ToolExecutionIndicator({ tool, status, result }) {
   const icons = {
@@ -259,29 +259,6 @@ const ChatPane = forwardRef(function ChatPane(
       <div className="flex-1 space-y-5 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 md:px-6 lg:px-8">
         {conversation ? (
           <>
-            <div className="mb-2 text-2xl font-serif tracking-tight sm:text-3xl md:text-4xl lg:text-5xl">
-              <span className="block leading-[1.05] font-sans text-xl sm:text-2xl">{conversation.title}</span>
-            </div>
-            <div className="mb-4 text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
-              Updated {timeAgo(conversation.updatedAt)} · {count} messages
-            </div>
-
-            <div className="mb-6 flex flex-wrap gap-2 border-b border-zinc-200 pb-5 dark:border-zinc-800">
-              {tags.map((t) => (
-                <span
-                  key={t}
-                  className={cls(
-                    "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] sm:px-3 sm:py-1 sm:text-xs",
-                    isCodingAgent || isThinkingMode || isDeepSeek
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
-                      : "border-zinc-200 text-zinc-700 dark:border-zinc-800 dark:text-zinc-200",
-                  )}
-                >
-                  {t}
-                </span>
-              ))}
-            </div>
-
             {messages.length === 0 ? (
               <div className="rounded-xl border border-dashed border-zinc-300 p-6 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
                 {isCodingAgent
